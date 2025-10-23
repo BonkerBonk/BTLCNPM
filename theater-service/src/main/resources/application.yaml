@@ -1,0 +1,10 @@
+server:
+  port: 8081
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+firebase:
+  config:
+    path: classpath:serviceAccountKey.json
