@@ -52,7 +52,7 @@ public class TheaterServiceImpl implements TheaterService {
         }
 
         ApiFuture<WriteResult> result = docRef.set(theater);
-        log.info("🎬 Theater created with ID: {}, at: {}", theater.getTheaterId(), result.get().getUpdateTime());
+        log.info("", theater.getTheaterId(), result.get().getUpdateTime());
         return theater;
     }
 
