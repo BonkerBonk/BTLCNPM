@@ -24,7 +24,6 @@ public class TheaterServiceImpl implements TheaterService {
         CollectionReference theatersCollection = db.collection(COLLECTION_NAME);
         DocumentReference docRef;
 
-        // ✅ Nếu không có theaterId → tự sinh ID dạng TH1, TH2...
         if (theater.getTheaterId() == null || theater.getTheaterId().isBlank()) {
             ApiFuture<QuerySnapshot> future = theatersCollection.get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
@@ -47,12 +46,11 @@ public class TheaterServiceImpl implements TheaterService {
             theater.setTheaterId(newId); // Set field
             docRef = theatersCollection.document(newId); // Set as document ID
         } else {
-            // ✅ Nếu có sẵn ID, dùng luôn
+
             docRef = theatersCollection.document(theater.getTheaterId());
             theater.setTheaterId(theater.getTheaterId()); // Bảo đảm lưu cả field
         }
 
-        // ✅ Lưu vào Firestore
         ApiFuture<WriteResult> result = docRef.set(theater);
         log.info("🎬 Theater created with ID: {}, at: {}", theater.getTheaterId(), result.get().getUpdateTime());
         return theater;
