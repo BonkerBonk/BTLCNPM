@@ -1,0 +1,41 @@
+# === BẢO MẬT (QUAN TRỌNG NHẤT) ===
+# Chặn file key bí mật của Firebase (trong BẤT KỲ thư mục resources nào)
+# TUYỆT ĐỐI KHÔNG PUSH FILE NÀY!
+*/src/main/resources/*.json
+
+# === Thư mục Build của Maven ===
+# Chặn toàn bộ thư mục 'target' trong các service con
+*/target/
+
+# === File Log ===
+*.log
+*.log.*
+
+# === Cấu hình IDE & Editor (Rác của máy cá nhân) ===
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+/nbproject/
+/build/
+/dist/
+.DS_Store
+Thumbs.db
+
+# === CHỈ GIỮ LẠI CÁC FILE CẦN THIẾT ===
+# 1. Bỏ qua MỌI THỨ bên trong thư mục của từng service...
+auth_service/*
+profile_service/*
+email_service/*
+
+# 2. ... NGOẠI TRỪ các file/thư mục cần thiết bên trong chúng:
+!*/src/             # Giữ lại toàn bộ code nguồn
+!*/pom.xml          # Giữ lại file cấu hình Maven
+!*/mvnw             # Giữ lại Maven Wrapper (Linux/Mac)
+!*/mvnw.cmd         # Giữ lại Maven Wrapper (Windows)
+!*/.mvn/            # Giữ lại thư mục cấu hình Wrapper
+!*/.mvn/** # Đảm bảo các file BÊN TRONG .mvn cũng được giữ lại
