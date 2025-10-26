@@ -1,0 +1,62 @@
+### Yêu cầu Đăng ký
+POST http://localhost:8081/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "anhdaik34@gmail.com",
+  "password": "123456",
+  "fullName": "Chu Viet Anh"
+}
+### Yêu cầu Đăng nhập (THÀNH CÔNG)
+POST http://localhost:8081/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user2@gmail.com",
+  "password": "123456"
+}
+
+### Yêu cầu Đăng nhập (SAI MẬT KHẨU)
+POST http://localhost:8081/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user2@gmail.com",
+  "password": "sai-mat-khau-roi"
+}
+### Yêu cầu Quên mật khẩu
+POST http://localhost:8081/api/v1/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "use@gmail.com"
+}
+
+###
+GET http://localhost:8082/api/v1/profile/me
+
+Authorization: Bearer
+
+
+### check put
+PUT http://localhost:8082/api/v1/profile/me
+
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjlkMjEzMGZlZjAyNTg3ZmQ4ODYxODg2OTgyMjczNGVmNzZhMTExNjUiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiVGVzdCB0dSBWUyBDb2RlMSIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9idGxjbnBtLTdlMTVkIiwiYXVkIjoiYnRsY25wbS03ZTE1ZCIsImF1dGhfdGltZSI6MTc2MTQxNTM5MCwidXNlcl9pZCI6IlliSkZoT3lmb2JNRFh1N0dTMjhjVGMybVMzdjIiLCJzdWIiOiJZYkpGaE95Zm9iTURYdTdHUzI4Y1RjMm1TM3YyIiwiaWF0IjoxNzYxNDE1MzkwLCJleHAiOjE3NjE0MTg5OTAsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbInVzZXIyQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.RTSg-TK-XJVUtoZOMOcoEjO4DCAkOGKMp1zcC8e_Rr1C3f3eoJBr1JG1vo7HD_rMyh58wwv6MeOhpYCC5eskmuCTiiGe1vugSowd75kc0RtBuPfjYSgXrrTKNiewZodjie8T_jwwywgDdjM-W71ZdC2le9mF4tDsb5ttS-WdzZ2-dBxjAWe9fsPg5y3dwVxlm_Ejc6F4XlCJjbDbq3ClbeQngd0KMeqkSYoQTnif0RZSFmclBaq4lcyY-jw7AADc3fkFiOQEsiQvYMqRiLOF0UMMrpHVqqC_IVnTQOi5FzDUMwOpg5g-7edoowtzrDPSLN6EjdpdpwWLaiHmuRXa7w
+Content-Type: application/json
+
+{
+    "fullName": "Nguyen Van A",
+    "phoneNumber": "0123456789",
+    "dateOfBirth": {
+        "seconds": 915148800,
+        "nanos": 0
+    }
+}
+
+### test mail 
+POST http://localhost:8083/api/v1/notification/resend-ticket
+Content-Type: application/json
+
+{
+  "bookingId": "test_mail01"
+}
