@@ -1,8 +1,6 @@
 package com.example.auth_service.dto;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 // @Data bao gồm @Getter, @Setter, @ToString, @EqualsAndHashCode
 @Data 
