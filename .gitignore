@@ -1,0 +1,15 @@
+**/serviceAccountKey.json
+# Firebase secrets
+**/serviceAccountKey.json
+
+# IDE config
+.idea/
+*.iml
+
+# Build output
+/target/
+build/
+
+# OS-specific
+.DS_Store
+Thumbs.db
