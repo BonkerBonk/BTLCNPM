@@ -1,3 +1,4 @@
+
 # === BẢO MẬT ===
 # Chặn file key bí mật của Firebase (trong BẤT KỲ thư mục resources nào)
 **/src/main/resources/*.json
