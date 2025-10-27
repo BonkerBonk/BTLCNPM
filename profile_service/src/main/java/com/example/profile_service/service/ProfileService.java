@@ -1,7 +1,10 @@
 package com.example.profile_service.service;
-
+import java.text.ParseException; // <<< Import ParseException
+import java.text.SimpleDateFormat; // <<< Import SimpleDateFormat
+import java.util.Date;             // <<< Import Date
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;         // <<< Import TimeZone
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.example.profile_service.dto.UpdateProfileRequest;
 import com.example.profile_service.dto.UserProfileResponse;
 import com.google.api.core.ApiFuture;
+import com.google.cloud.Timestamp; // <<< Import Timestamp
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.WriteResult;
@@ -36,13 +40,25 @@ public class ProfileService {
         if (document.exists()) {
             // 4. Nếu có, map dữ liệu sang DTO
             // Dùng @Builder mà chúng ta đã tạo trong DTO
+            // Lấy Timestamp từ Firestore
+            Timestamp dobTimestamp = document.getTimestamp("dateOfBirth");
+            String dobString = null; // Khởi tạo là null
+
+            // Kiểm tra xem Timestamp có tồn tại không
+            if (dobTimestamp != null) {
+                // Định dạng mong muốn (ví dụ: YYYY-MM-DD)
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                sdf.setTimeZone(TimeZone.getTimeZone("UTC")); // Đảm bảo đúng múi giờ
+                // Format Timestamp thành String
+                dobString = sdf.format(dobTimestamp.toDate());
+            }
             return UserProfileResponse.builder()
                     .userId(document.getString("userId"))
                     .email(document.getString("email"))
                     .fullName(document.getString("fullName"))
                     .phoneNumber(document.getString("phoneNumber"))
                     .profileImageUrl(document.getString("profileImageUrl"))
-                    .dateOfBirth(document.getTimestamp("dateOfBirth"))
+                    .dateOfBirth(dobString)
                     .build();
         } else {
             // 5. Nếu không tìm thấy user (ví dụ: lỗi đồng bộ)
@@ -51,7 +67,7 @@ public class ProfileService {
     }
 
 public void updateMyProfile(String uid, UpdateProfileRequest request) 
-        throws ExecutionException, InterruptedException {
+        throws ExecutionException, InterruptedException, IllegalArgumentException {
         
     // 1. Tạo một Map để chứa các trường cần cập nhật
     // Chúng ta dùng Map thay vì đối tượng để chỉ cập nhật
@@ -59,26 +75,51 @@ public void updateMyProfile(String uid, UpdateProfileRequest request)
     Map<String, Object> updates = new HashMap<>();
 
     // 2. Kiểm tra xem trường nào được gửi lên thì mới thêm vào Map
-    if (request.getFullName() != null) {
-        updates.put("fullName", request.getFullName());
+    if (request.getFullName() != null && !request.getFullName().isBlank()) { // Thêm check isBlank
+        updates.put("fullName", request.getFullName().trim()); // Thêm trim()
     }
     if (request.getPhoneNumber() != null) {
-        updates.put("phoneNumber", request.getPhoneNumber());
+        // Nếu gửi chuỗi rỗng thì coi như muốn xóa (lưu null), nếu không thì trim
+        updates.put("phoneNumber", request.getPhoneNumber().isBlank() ? null : request.getPhoneNumber().trim());
     }
+    // === XỬ LÝ DATE OF BIRTH ===
     if (request.getDateOfBirth() != null) {
-        updates.put("dateOfBirth", request.getDateOfBirth());
+        if (request.getDateOfBirth().isBlank()) {
+            // Nếu gửi chuỗi rỗng -> muốn xóa ngày sinh
+            updates.put("dateOfBirth", null);
+        } else {
+            try {
+                // Định dạng phải khớp với chuỗi gửi lên (ví dụ: YYYY-MM-DD)
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                // Quan trọng: Đặt múi giờ UTC để lưu trữ nhất quán
+                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                // Parse chuỗi thành đối tượng Date
+                Date parsedDate = sdf.parse(request.getDateOfBirth().trim());
+                // Chuyển đổi Date thành Firestore Timestamp
+                Timestamp dobTimestamp = Timestamp.of(parsedDate);
+                // Đưa Timestamp vào map để cập nhật
+                updates.put("dateOfBirth", dobTimestamp);
+            } catch (ParseException e) {
+                // Ném lỗi nếu người dùng gửi định dạng ngày sai
+                throw new IllegalArgumentException("Định dạng ngày sinh không hợp lệ. Vui lòng sử dụng YYYY-MM-DD.", e);
+            }
+        }
     }
+    // === KẾT THÚC XỬ LÝ DATE OF BIRTH ===
 
     // 3. Kiểm tra xem có gì để cập nhật không
     if (updates.isEmpty()) {
-        // Không có gì để làm, chỉ cần trả về
+        System.out.println("Không có trường nào cần cập nhật cho user: " + uid); // Thêm log
         return; 
     }
 
     // 4. Gửi lệnh "update" lên Firestore
     // Dùng .update() thay vì .set() để không ghi đè toàn bộ document
+    System.out.println("Đang cập nhật user " + uid + " với dữ liệu: " + updates); // Thêm log
     ApiFuture<WriteResult> future = firestore.collection("users").document(uid).update(updates);
 
+    WriteResult result = future.get();
+    System.out.println("Cập nhật thành công user " + uid + " lúc: " + result.getUpdateTime()); // Thêm log
      // 5. Chờ cho đến khi cập nhật xong
     future.get();
     }

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/notification") // Đường dẫn gốc theo hợp đồng API
+@RequestMapping("/api/v1/email") // Đường dẫn gốc theo hợp đồng API
 public class EmailController {
 
     @Autowired
@@ -22,7 +22,7 @@ public class EmailController {
     /**
      * API Gửi lại vé
      */
-    @PostMapping("/resend-ticket") // -> /api/v1/notification/resend-ticket
+    @PostMapping("/resend-ticket") // -> /api/v1/email/resend-ticket
     public ResponseEntity<?> resendTicket(@RequestBody ResendTicketRequest request) {
         
         try {
