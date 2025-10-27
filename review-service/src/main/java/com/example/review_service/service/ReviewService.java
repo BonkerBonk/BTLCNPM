@@ -12,4 +12,6 @@ public interface ReviewService {
     List<Review> getAllReviews() throws ExecutionException, InterruptedException;
     Review getReviewById(String id) throws ExecutionException, InterruptedException;
     void deleteReview(String id);
+     List<Review> getReviewsByMovieId(String movieId) throws ExecutionException, InterruptedException;
+
 }
