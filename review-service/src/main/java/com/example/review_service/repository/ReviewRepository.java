@@ -40,7 +40,18 @@ public class ReviewRepository {
         }
         return reviews;
     }
+    public List<Review> getByMovieId(String movieId) throws ExecutionException, InterruptedException {
+        Firestore db = FirestoreClient.getFirestore();
+        CollectionReference reviewsRef = db.collection(COLLECTION_NAME);
+        Query query = reviewsRef.whereEqualTo("movieId", movieId);
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
 
+        List<Review> reviews = new ArrayList<>();
+        for (DocumentSnapshot doc : querySnapshot.get().getDocuments()) {
+            reviews.add(doc.toObject(Review.class));
+        }
+        return reviews;
+    }
     public Review getById(String id) throws ExecutionException, InterruptedException {
         Firestore db = FirestoreClient.getFirestore();
         DocumentSnapshot snapshot = db.collection(COLLECTION_NAME).document(id).get().get();
@@ -55,7 +66,7 @@ public class ReviewRepository {
         db.collection(COLLECTION_NAME).document(id).delete();
     }
 
-    // ✅ Generate next review ID: Rv1, Rv2, ...
+    
     public String generateNextId() throws ExecutionException, InterruptedException {
         List<Review> reviews = getAll();
         int maxId = 0;
