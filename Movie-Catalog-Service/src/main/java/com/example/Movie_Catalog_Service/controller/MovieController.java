@@ -26,7 +26,7 @@ public class MovieController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Movie>> getAll() throws ExecutionException, InterruptedException {
+    public ResponseEntity<List<Movie>> getAll(@RequestParam(required = false) String status) throws ExecutionException, InterruptedException {
         return ResponseEntity.ok(movieService.getAllMovies());
     }
 

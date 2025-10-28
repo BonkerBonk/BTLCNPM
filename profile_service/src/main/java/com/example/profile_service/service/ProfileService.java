@@ -3,7 +3,13 @@ package com.example.profile_service.service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-
+// <<< IMPORT THÊM CÁC LỚP NÀY >>>
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+import com.google.cloud.Timestamp; // <<< IMPORT Timestamp
+// ... (các import khác)
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -51,7 +57,7 @@ public class ProfileService {
     }
 
 public void updateMyProfile(String uid, UpdateProfileRequest request) 
-        throws ExecutionException, InterruptedException {
+        throws ExecutionException, InterruptedException, IllegalArgumentException {
         
     // 1. Tạo một Map để chứa các trường cần cập nhật
     // Chúng ta dùng Map thay vì đối tượng để chỉ cập nhật
@@ -65,9 +71,28 @@ public void updateMyProfile(String uid, UpdateProfileRequest request)
     if (request.getPhoneNumber() != null) {
         updates.put("phoneNumber", request.getPhoneNumber());
     }
+    // === XỬ LÝ DATE OF BIRTH (String -> Timestamp) ===
     if (request.getDateOfBirth() != null) {
-        updates.put("dateOfBirth", request.getDateOfBirth());
+        if (request.getDateOfBirth().isBlank()) {
+            // Nếu gửi chuỗi rỗng -> muốn xóa (set null)
+            updates.put("dateOfBirth", null);
+        } else {
+            try {
+                // Định dạng mong muốn (phải khớp với chuỗi Android/Postman gửi lên)
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                sdf.setTimeZone(TimeZone.getTimeZone("UTC")); // Chuẩn hóa múi giờ
+
+                Date parsedDate = sdf.parse(request.getDateOfBirth().trim());
+                Timestamp dobTimestamp = Timestamp.of(parsedDate); // Chuyển thành Timestamp
+
+                updates.put("dateOfBirth", dobTimestamp); // Thêm Timestamp vào Map
+            } catch (ParseException e) {
+                // Ném lỗi 400 nếu client gửi định dạng ngày sai
+                throw new IllegalArgumentException("Định dạng ngày sinh không hợp lệ. Vui lòng sử dụng YYYY-MM-DD.", e);
+            }
+        }
     }
+    // === KẾT THÚC XỬ LÝ DATE OF BIRTH ===
 
     // 3. Kiểm tra xem có gì để cập nhật không
     if (updates.isEmpty()) {

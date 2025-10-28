@@ -10,5 +10,5 @@ public class UpdateProfileRequest {
     
     private String fullName;
     private String phoneNumber;
-    private Timestamp dateOfBirth;
+    private String dateOfBirth;
 }

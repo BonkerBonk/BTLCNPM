@@ -25,13 +25,13 @@ spring:
           - id: email_service
             uri: http://localhost:8084
             predicates:
-              - Path=/api/v1/email/**
+              - Path=/api/v1/notification/**
 
           # === TV3 (Catalog & Content) ===
           - id: movie_service
             uri: http://localhost:8085
             predicates:
-              - Path=/api/v1/movie/**
+              - Path=/api/v1/movies/**
           - id: theater_service
             uri: http://localhost:8086
             predicates:
@@ -39,7 +39,7 @@ spring:
           - id: review_service
             uri: http://localhost:8087
             predicates:
-              - Path=/api/v1/review/**
+              - Path=/api/v1/reviews/**
 
           # === TV4 (Core Logic) ===
           - id: room_service
