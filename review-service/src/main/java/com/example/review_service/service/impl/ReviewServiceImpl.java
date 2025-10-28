@@ -72,6 +72,11 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    public List<Review> getReviewsByMovieId(String movieId) throws ExecutionException, InterruptedException {
+        return reviewRepository.getByMovieId(movieId);
+    }
+    
+    @Override
     public void deleteReview(String id) {
         reviewRepository.deleteById(id);
     }

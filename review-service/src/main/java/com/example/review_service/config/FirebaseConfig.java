@@ -1,68 +1,59 @@
-package com.example.review_service.config; // Đảm bảo package đúng
+package com.example.review_service.config; // (Thay package cho phù hợp)
 
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.firestore.Firestore;        // Import Firestore
+import com.google.cloud.firestore.Firestore;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.cloud.FirestoreClient;   // Import FirestoreClient
-import org.springframework.context.annotation.Bean;     // Import @Bean
+import com.google.firebase.cloud.FirestoreClient;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource; // <<< Import ClassPathResource
-
-import javax.annotation.PostConstruct; // Hoặc jakarta.annotation.PostConstruct
+import org.springframework.core.io.ClassPathResource; // <<< IMPORT THÊM
+import javax.annotation.PostConstruct;
+// import java.io.FileInputStream; // <<< XÓA HOẶC COMMENT DÒNG NÀY
 import java.io.IOException;
-import java.io.InputStream;            // <<< Import InputStream
+import java.io.InputStream; // <<< IMPORT THÊM
 
 @Configuration
 public class FirebaseConfig {
 
-    // Tên file key JSON (đảm bảo file này tồn tại trong src/main/resources)
-    private static final String FIREBASE_SERVICE_ACCOUNT_KEY = "serviceAccountKey.json";
+    // Đặt tên file key của bạn ở đây
+    private static final String FIREBASE_SERVICE_ACCOUNT_KEY = "serviceAccountKey.json"; // <<< Đảm bảo tên file này đúng
 
-    @PostConstruct // Hàm này sẽ chạy khi bean được tạo
+    @PostConstruct
     public void init() throws IOException {
-        // --- Sửa đoạn đọc file ---
-        InputStream serviceAccountStream = null; // Khởi tạo là null
-        try {
-            // Sử dụng ClassPathResource để lấy file từ classpath (resources)
-            ClassPathResource resource = new ClassPathResource(FIREBASE_SERVICE_ACCOUNT_KEY);
-            serviceAccountStream = resource.getInputStream(); // Lấy InputStream
 
-            // Kiểm tra xem file có thực sự đọc được không
+        InputStream serviceAccountStream = null;
+        try {
+            // === SỬA ĐOẠN ĐỌC FILE ===
+            ClassPathResource resource = new ClassPathResource(FIREBASE_SERVICE_ACCOUNT_KEY);
+            serviceAccountStream = resource.getInputStream();
+
             if (serviceAccountStream == null) {
-                throw new IOException("Không thể tìm thấy file key Firebase trong classpath: " + FIREBASE_SERVICE_ACCOUNT_KEY);
+                throw new IOException("Không tìm thấy file key Firebase trong classpath: " + FIREBASE_SERVICE_ACCOUNT_KEY);
             }
+            // === KẾT THÚC SỬA ===
 
             FirebaseOptions options = new FirebaseOptions.Builder()
-                    // Dùng InputStream đã lấy được
                     .setCredentials(GoogleCredentials.fromStream(serviceAccountStream))
                     .build();
 
-            // Chỉ khởi tạo FirebaseApp nếu chưa có app nào được khởi tạo
             if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
-                System.out.println("Firebase Application Initialized for review-service"); // Log thông báo
+                // Thêm log để biết đã khởi tạo
+                System.out.println("Firebase Application Initialized for " + this.getClass().getPackageName());
             }
         } catch (IOException e) {
-            System.err.println("!!! LỖI NGHIÊM TRỌNG KHI ĐỌC FILE KEY FIREBASE: " + e.getMessage());
-            throw e; // Ném lại lỗi để Spring biết khởi tạo thất bại
+            throw new RuntimeException("Lỗi nghiêm trọng khi đọc file key Firebase: " + e.getMessage(), e);
         } finally {
-            // Đóng InputStream sau khi dùng xong (rất quan trọng)
+            // Luôn đóng stream
             if (serviceAccountStream != null) {
-                try {
-                    serviceAccountStream.close();
-                } catch (IOException e) {
-                    System.err.println("Lỗi khi đóng InputStream file key Firebase: " + e.getMessage());
-                }
+                serviceAccountStream.close();
             }
         }
-        // --- Kết thúc sửa đoạn đọc file ---
     }
 
-    // Bean này cung cấp đối tượng Firestore cho các service khác
     @Bean
     public Firestore getFirestore() {
-        // Lấy Firestore instance đã được khởi tạo bởi Admin SDK
         return FirestoreClient.getFirestore();
     }
 }

@@ -1,51 +1,59 @@
-package com.example.Movie_Catalog_Service.config;
+package com.example.Movie_Catalog_Service.config; // (Thay package cho phù hợp)
 
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.Firestore;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import jakarta.annotation.PostConstruct; // Hoặc javax.annotation.PostConstruct
+import com.google.firebase.cloud.FirestoreClient;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource; // <<< Import thư viện này
-
-import java.io.InputStream;
+import org.springframework.core.io.ClassPathResource; // <<< IMPORT THÊM
+import javax.annotation.PostConstruct;
+// import java.io.FileInputStream; // <<< XÓA HOẶC COMMENT DÒNG NÀY
+import java.io.IOException;
+import java.io.InputStream; // <<< IMPORT THÊM
 
 @Configuration
 public class FirebaseConfig {
 
-    // Tên file JSON key của bạn
-    private static final String FIREBASE_SERVICE_ACCOUNT_KEY = "serviceAccountKey.json";
+    // Đặt tên file key của bạn ở đây
+    private static final String FIREBASE_SERVICE_ACCOUNT_KEY = "serviceAccountKey.json"; // <<< Đảm bảo tên file này đúng
 
-    @PostConstruct // Đảm bảo annotation này tồn tại
-    public void init() { // Tên hàm có thể khác (vd: initialize)
+    @PostConstruct
+    public void init() throws IOException {
+
+        InputStream serviceAccountStream = null;
         try {
-            // <<< SỬA ĐOẠN NÀY >>>
-            // Sử dụng ClassPathResource để đọc file từ thư mục resources
+            // === SỬA ĐOẠN ĐỌC FILE ===
             ClassPathResource resource = new ClassPathResource(FIREBASE_SERVICE_ACCOUNT_KEY);
-            InputStream serviceAccountStream = resource.getInputStream(); // Lấy InputStream
+            serviceAccountStream = resource.getInputStream();
 
-            // Kiểm tra xem InputStream có null không (đề phòng)
             if (serviceAccountStream == null) {
-                throw new RuntimeException("Không thể tìm thấy file key Firebase trong classpath: " + FIREBASE_SERVICE_ACCOUNT_KEY);
+                throw new IOException("Không tìm thấy file key Firebase trong classpath: " + FIREBASE_SERVICE_ACCOUNT_KEY);
             }
+            // === KẾT THÚC SỬA ===
 
             FirebaseOptions options = new FirebaseOptions.Builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccountStream)) // Dùng InputStream ở đây
-                    // .setDatabaseUrl("...") // Thêm nếu cần
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccountStream))
                     .build();
 
-            // Khởi tạo FirebaseApp nếu chưa có
             if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
-                System.out.println("Firebase Application Initialized for Movie-Catalog-Service"); // Thêm log
+                // Thêm log để biết đã khởi tạo
+                System.out.println("Firebase Application Initialized for " + this.getClass().getPackageName());
             }
-
-        } catch (Exception e) {
-            // Ném lỗi rõ ràng hơn nếu có vấn đề
-            throw new RuntimeException("Lỗi khởi tạo Firebase Admin SDK", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi nghiêm trọng khi đọc file key Firebase: " + e.getMessage(), e);
+        } finally {
+            // Luôn đóng stream
+            if (serviceAccountStream != null) {
+                serviceAccountStream.close();
+            }
         }
     }
 
-    // (Thêm @Bean cho Firestore nếu cần)
-    // @Bean
-    // public Firestore firestore() { ... }
+    @Bean
+    public Firestore getFirestore() {
+        return FirestoreClient.getFirestore();
+    }
 }
