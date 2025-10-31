@@ -20,7 +20,7 @@ public class FirebaseConfig {
         try {
             // Đọc file JSON từ thư mục "resources"
             InputStream serviceAccount = getClass().getClassLoader()
-                    .getResourceAsStream("btlcnpm-7e15d-firebase-adminsdk-fbsvc-c1929eb959.json");
+                    .getResourceAsStream("btlcnpm-7e15d-firebase-adminsdk-fbsvc-6d84f26447.json");
 
             if (serviceAccount == null) {
                 throw new IOException("Không tìm thấy file serviceAccountKey.json trong thư mục resources");

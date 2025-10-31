@@ -1,5 +1,6 @@
 package com.example.auth_service.service;
 
+import com.example.auth_service.dto.ForgotPasswordRequest;
 import com.example.auth_service.dto.LoginRequest; // MỚI
 import com.example.auth_service.dto.LoginResponse; // MỚI
 import com.example.auth_service.dto.RegisterRequest;
@@ -104,17 +105,24 @@ public class AuthService {
             throw new RuntimeException("Email hoặc mật khẩu không chính xác.");
         }
     }
-    // --- HÀM FORGOT PASSWORD (MỚI) ---
+    // --- HÀM FORGOT PASSWORD (ĐÃ CẬP NHẬT) ---
     public String forgotPassword(String email) {
         try {
             // 1. Gọi Firebase Auth để tạo link reset
             String link = firebaseAuth.generatePasswordResetLink(email);
 
-            // 2. Gửi email (Quan trọng!)
-            // TODO: Ở đây, bạn cần gọi EmailService (Service 14)
-            // để gửi email chứa 'link' này cho người dùng.
-            // Tạm thời chúng ta sẽ in ra console để test
-            System.out.println("Generated password reset link: " + link);
+            // 2. GỌI EMAIL-SERVICE (Cổng 8083)
+            // Chuẩn bị URL của EmailService (API nội bộ)
+            String emailServiceUrl = "http://localhost:8083/api/v1/notification/send-reset-link";
+
+            // Chuẩn bị Request Body
+            Map<String, String> requestBody = new HashMap<>();
+            requestBody.put("email", email);
+            requestBody.put("link", link);
+
+            // Gọi API POST
+            // Chúng ta không cần quan tâm kết quả trả về, chỉ cần nó không báo lỗi
+            restTemplate.postForObject(emailServiceUrl, requestBody, Map.class);
 
             // 3. Trả về thông báo thành công
             return "Email reset mật khẩu đã được gửi.";
@@ -123,10 +131,13 @@ public class AuthService {
             // Bắt lỗi nếu email không tồn tại
             if (e.getAuthErrorCode() == com.google.firebase.auth.AuthErrorCode.EMAIL_NOT_FOUND) {
                 // Vẫn trả về thông báo thành công để bảo mật
-                // (Không cho hacker biết email nào có tồn tại)
                 return "Email reset mật khẩu đã được gửi.";
             }
             throw new RuntimeException("Lỗi khi tạo link reset: " + e.getMessage());
+        } catch (Exception e) {
+            // Bắt lỗi nếu gọi EmailService (cổng 8083) thất bại
+            // (Ví dụ: EmailService bị tắt)
+            throw new RuntimeException("Lỗi khi gọi EmailService: " + e.getMessage());
         }
     }
 }
