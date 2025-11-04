@@ -1,46 +1,6 @@
 TỔNG KẾT LUỒNG NGHIỆP VỤ - THÀNH VIÊN 5 (TRANSACTION)
 
-Đây là file ghi chú tóm tắt 5 microservice thuộc luồng Giao dịch (Transaction) [cite: đề cương.docx] và các điểm tích hợp liên quan.
-
-1. Các Service đã hoàn thành (Ports)
-
-Tên Service
-
-Port
-
-Nhiệm vụ
-
-BookingService
-
-8091
-
-(Giỏ hàng) Tạo và quản lý đơn hàng "PENDING".
-
-PaymentService
-
-8092
-
-(Thu ngân) Xử lý thanh toán (giả lập) và cập nhật đơn hàng.
-
-TicketService
-
-8093
-
-(Máy in vé) Tạo vé điện tử (kèm mã QR) sau khi thanh toán.
-
-CheckinService
-
-8094
-
-(Soát vé) Xác thực vé tại rạp (status: "VALID" -> "USED").
-
-PushNotificationService
-
-8095
-
-(Thông báo) Đăng ký thiết bị (FCM token) của người dùng.
-
-2. Danh sách API đã triển khai (Thành viên 5)
+1. Danh sách API đã triển khai (Thành viên 5)
 
 Dưới đây là các API mà 5 service trên cung cấp:
 
@@ -50,7 +10,7 @@ POST /api/v1/booking/bookings
 
 Tác dụng: (App Android gọi) Tạo một đơn hàng mới ở trạng thái PENDING.
 
-Tích hợp: Service này sẽ gọi showtime-service (8089) để kiểm tra vé và gọi lại lần nữa để trừ vé [cite: BookingServiceImpl.java (Chứa Logic Trừ Vé):BookingService/src/main/java/com/btlcnpm/BookingService/service/BookingServiceImpl.java].
+Tích hợp: Service này sẽ gọi showtime-service (8089) để kiểm tra vé và gọi lại lần nữa để trừ vé 
 
 GET /api/v1/booking/my-history
 
@@ -76,7 +36,7 @@ Tác dụng: (App Android gọi) API quan trọng, lấy tất cả vé VALID c�
 
 POST /api/v1/ticket/internal/create
 
-Tác dụng: (Nội bộ) API này được PaymentService (8092) gọi. Đây là "bộ não" tổng hợp dữ liệu, nó sẽ gọi 4-5 service khác (Booking, Showtime, Movie, Theater, Room) để lấy dữ liệu thật (tên phim, tên rạp...) và tạo vé hoàn chỉnh [cite: TicketServiceImpl.java (Sửa lỗi Room API):TicketService/src/main/java/com/btlcnpm/TicketService/service/TicketServiceImpl.java].
+Tác dụng: (Nội bộ) API này được PaymentService (8092) gọi. Đây là "bộ não" tổng hợp dữ liệu, nó sẽ gọi 4-5 service khác (Booking, Showtime, Movie, Theater, Room) để lấy dữ liệu thật (tên phim, tên rạp...) và tạo vé hoàn chỉnh 
 
 d. CheckinService (Port 8094)
 
@@ -117,3 +77,9 @@ Bước 3: Kiểm tra Kết quả (Firebase)
 7.  Mở Firebase Console -> Collection tickets.
 8.  Sẽ thấy 2 vé mới được tạo (có bookingId: "BK_123").
 9.  Dữ liệu vé sẽ đầy đủ: movieTitle: "Lật Mặt 7", theaterName: "Beta Thanh Xuân", v.v.
+
+
+(TODOs) : 
+
+1. Trừ Vé (TV4 - showtime-service): chưa có API có tác dụng theo dõi sự thay đổi của vé để gọi 
+2. Lấy Tên Phòng (TV4 - room-service): Ticket service khi được gọi API TRẢ vé về thì không hiển thị tên phòng do TV4 chưa có API lấy phòng theo ID mà chỉ có lấy hết các phòng 
