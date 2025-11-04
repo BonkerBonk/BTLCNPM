@@ -1,15 +1,63 @@
-**/serviceAccountKey.json
-# Firebase secrets
-**/serviceAccountKey.json
+===================================================
 
-# IDE config
-.idea/
+PHẦN QUAN TRỌNG NHẤT (Thêm vào để chặn Key Firebase)
+
+===================================================
+
+Tuyệt đối không đưa file này lên GitHub!!!
+
+firebase-service-account.json
+*.json
+
+Log files
+
+*.log
+
+===================================================
+
+PHẦN CŨ CỦA BẠN (Giữ nguyên)
+
+===================================================
+
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!/src/main//target/
+!/src/test//target/
+
+STS
+
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+IntelliJ IDEA
+
+.idea
+*.iws
 *.iml
+*.ipr
 
-# Build output
-/target/
+NetBeans
+
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
 build/
+!/src/main//build/
+!/src/test//build/
 
-# OS-specific
+VS Code
+
+.vscode/
+
+OS files
+
 .DS_Store
 Thumbs.db

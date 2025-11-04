@@ -1,0 +1,119 @@
+TỔNG KẾT LUỒNG NGHIỆP VỤ - THÀNH VIÊN 5 (TRANSACTION)
+
+Đây là file ghi chú tóm tắt 5 microservice thuộc luồng Giao dịch (Transaction) [cite: đề cương.docx] và các điểm tích hợp liên quan.
+
+1. Các Service đã hoàn thành (Ports)
+
+Tên Service
+
+Port
+
+Nhiệm vụ
+
+BookingService
+
+8091
+
+(Giỏ hàng) Tạo và quản lý đơn hàng "PENDING".
+
+PaymentService
+
+8092
+
+(Thu ngân) Xử lý thanh toán (giả lập) và cập nhật đơn hàng.
+
+TicketService
+
+8093
+
+(Máy in vé) Tạo vé điện tử (kèm mã QR) sau khi thanh toán.
+
+CheckinService
+
+8094
+
+(Soát vé) Xác thực vé tại rạp (status: "VALID" -> "USED").
+
+PushNotificationService
+
+8095
+
+(Thông báo) Đăng ký thiết bị (FCM token) của người dùng.
+
+2. Danh sách API đã triển khai (Thành viên 5)
+
+Dưới đây là các API mà 5 service trên cung cấp:
+
+a. BookingService (Port 8091)
+
+POST /api/v1/booking/bookings
+
+Tác dụng: (App Android gọi) Tạo một đơn hàng mới ở trạng thái PENDING.
+
+Tích hợp: Service này sẽ gọi showtime-service (8089) để kiểm tra vé và gọi lại lần nữa để trừ vé [cite: BookingServiceImpl.java (Chứa Logic Trừ Vé):BookingService/src/main/java/com/btlcnpm/BookingService/service/BookingServiceImpl.java].
+
+GET /api/v1/booking/my-history
+
+Tác dụng: (App Android gọi) Lấy lịch sử đặt vé (tất cả, PENDING, hoặc SUCCESSFUL) của người dùng.
+
+GET /api/v1/booking/internal/{bookingId}
+
+Tác dụng: (Nội bộ) API này được TicketService (8093) gọi để lấy thông tin (ví dụ: quantity, showtimeId) của một đơn hàng.
+
+b. PaymentService (Port 8092)
+
+POST /api/v1/payment/checkout
+
+Tác dụng: (App Android gọi) Xử lý thanh toán "giả lập" [cite: đề cương.docx].
+
+Tích hợp: Khi thành công, service này cập nhật status của booking thành SUCCESSFUL và kích hoạt (gọi) TicketService (8093).
+
+c. TicketService (Port 8093)
+
+GET /api/v1/ticket/my-tickets
+
+Tác dụng: (App Android gọi) API quan trọng, lấy tất cả vé VALID của người dùng để hiển thị (tạo mã QR bên Frontend).
+
+POST /api/v1/ticket/internal/create
+
+Tác dụng: (Nội bộ) API này được PaymentService (8092) gọi. Đây là "bộ não" tổng hợp dữ liệu, nó sẽ gọi 4-5 service khác (Booking, Showtime, Movie, Theater, Room) để lấy dữ liệu thật (tên phim, tên rạp...) và tạo vé hoàn chỉnh [cite: TicketServiceImpl.java (Sửa lỗi Room API):TicketService/src/main/java/com/btlcnpm/TicketService/service/TicketServiceImpl.java].
+
+d. CheckinService (Port 8094)
+
+POST /api/v1/checkin/scan
+
+Tác dụng: (App Nhân viên gọi) Nhận qrCodeData (chính là ticketId), kiểm tra vé. Nếu VALID, cập nhật status thành USED. Nếu USED, báo lỗi "Vé đã được sử dụng".
+
+e. PushNotificationService (Port 8095)
+
+POST /api/v1/push/register-device
+
+Tác dụng: (App Android gọi) Nhận fcmToken của thiết bị và lưu vào collection device_tokens [cite: image_3280f9.jpg] theo userId.
+
+3. Mô tả Luồng (Flow) & Test Case Hoàn Chỉnh
+
+Đây là kịch bản test đầy đủ (từ A->Z) cho luồng Giao dịch, yêu cầu 7 service (8085, 8086, 8088, 8089, 8091, 8092, 8093) phải cùng chạy.
+
+Bước 1: Chuẩn bị Dữ liệu (Dùng Postman)
+
+Tạo Phim (8085): POST /api/v1/movies (Tạo phim, ví dụ: MV_001, title: "Lật Mặt 7")
+
+Tạo Rạp (8086): POST /api/v1/theaters (Tạo rạp, ví dụ: TH_001, name: "Beta Thanh Xuân")
+
+Tạo Phòng (8088): POST /api/v1/theater/theaters/TH_001/rooms (Tạo phòng, ví dụ: R_001, name: "Phòng 1")
+
+Tạo Suất chiếu (8089): POST /api/v1/showtime (Tạo suất chiếu ST_001 liên kết 3 ID trên, availableTickets: 100).
+
+Bước 2: Thực hiện Giao dịch (Service của TV5)
+5.  Tạo Booking (8091): POST /api/v1/booking/bookings (dùng showtimeId: "ST_001", quantity: 2).
+* Service (8091) sẽ tự động gọi (8089) để check vé.
+* Service (8091) sẽ tự động gọi (8089) để trừ 2 vé (còn 98).
+* Kết quả: Nhận bookingId (ví dụ: BK_123).
+6.  Thanh toán (8092): POST /api/v1/payment/checkout (dùng bookingId: "BK_123", paymentMethod: "MOCK_SUCCESS").
+* Service (8092) sẽ cập nhật status của BK_123 -> SUCCESSFUL.
+* Service (8092) sẽ tự động gọi (8093) để tạo vé.
+
+Bước 3: Kiểm tra Kết quả (Firebase)
+7.  Mở Firebase Console -> Collection tickets.
+8.  Sẽ thấy 2 vé mới được tạo (có bookingId: "BK_123").
+9.  Dữ liệu vé sẽ đầy đủ: movieTitle: "Lật Mặt 7", theaterName: "Beta Thanh Xuân", v.v.
