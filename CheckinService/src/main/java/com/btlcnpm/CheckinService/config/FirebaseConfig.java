@@ -18,7 +18,7 @@ import java.io.InputStream;
 public class FirebaseConfig {
 
     // Tên file JSON bạn đã đổi tên ở Bước 3
-    private static final String FIREBASE_CONFIG_PATH = "firebase-service-account.json";
+    private static final String FIREBASE_CONFIG_PATH = "serviceAccountKey.json";
 
     @PostConstruct
     public void initializeFirebase() throws IOException {
