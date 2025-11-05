@@ -19,7 +19,7 @@ public class FirebaseConfig {
     @PostConstruct
     public void initialize() {
         try {
-            InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream("btlcnpm-7e15d-firebase-adminsdk-fbsvc-c1929eb959.json");
+            InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream("serviceAccountKey.json");
             
             if (serviceAccount == null) {
                 throw new IOException("Firebase service account file not found");

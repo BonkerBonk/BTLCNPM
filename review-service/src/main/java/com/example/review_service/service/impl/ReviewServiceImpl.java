@@ -66,16 +66,18 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewRepository.getAll();
     }
 
+    // === THÊM TRIỂN KHAI CHO HÀM MỚI ===
+    @Override
+    public List<Review> getReviewsByMovieId(String movieId) throws ExecutionException, InterruptedException {
+        return reviewRepository.findByMovieId(movieId);
+    }
+    // === KẾT THÚC ===
+
     @Override
     public Review getReviewById(String id) throws ExecutionException, InterruptedException {
         return reviewRepository.getById(id);
     }
 
-    @Override
-    public List<Review> getReviewsByMovieId(String movieId) throws ExecutionException, InterruptedException {
-        return reviewRepository.getByMovieId(movieId);
-    }
-    
     @Override
     public void deleteReview(String id) {
         reviewRepository.deleteById(id);

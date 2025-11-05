@@ -20,7 +20,7 @@ public class FirebaseConfig {
         try {
             // Đọc file JSON từ thư mục "resources"
             InputStream serviceAccount = getClass().getClassLoader()
-                    .getResourceAsStream("btlcnpm-7e15d-firebase-adminsdk-fbsvc-c1929eb959.json");
+                    .getResourceAsStream("serviceAccountKey.json");
 
             if (serviceAccount == null) {
                 throw new IOException("Không tìm thấy file serviceAccountKey.json trong thư mục resources");
@@ -45,7 +45,7 @@ public class FirebaseConfig {
     }
 
     // Cung cấp 2 Bean để các Service khác có thể @Autowired
-    
+
     @Bean
     public FirebaseAuth firebaseAuth() {
         // Trả về thể hiện (instance) của FirebaseAuth

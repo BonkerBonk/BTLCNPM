@@ -16,7 +16,7 @@ import java.io.InputStream;
 public class FirebaseConfig {
 
     // (QUAN TRỌNG) Đổi tên này thành tên file .json của bạn
-    private static final String FIREBASE_SERVICE_ACCOUNT_KEY = "btlcnpm-7e15d-firebase-adminsdk-fbsvc-c1929eb959.json";
+    private static final String FIREBASE_SERVICE_ACCOUNT_KEY = "serviceAccountKey.json";
 
     @PostConstruct
     public void initialize() {

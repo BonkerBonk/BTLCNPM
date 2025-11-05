@@ -40,18 +40,22 @@ public class ReviewRepository {
         }
         return reviews;
     }
-    public List<Review> getByMovieId(String movieId) throws ExecutionException, InterruptedException {
-        Firestore db = FirestoreClient.getFirestore();
-        CollectionReference reviewsRef = db.collection(COLLECTION_NAME);
-        Query query = reviewsRef.whereEqualTo("movieId", movieId);
-        ApiFuture<QuerySnapshot> querySnapshot = query.get();
 
+    // === THÊM HÀM MỚI ĐỂ TÌM THEO MOVIE ID ===
+    public List<Review> findByMovieId(String movieId) throws ExecutionException, InterruptedException {
+        Firestore db = FirestoreClient.getFirestore();
+        ApiFuture<QuerySnapshot> query = db.collection(COLLECTION_NAME)
+                .whereEqualTo("movieId", movieId) // Tìm tất cả document có trường movieId khớp
+                .get();
+        List<QueryDocumentSnapshot> documents = query.get().getDocuments();
         List<Review> reviews = new ArrayList<>();
-        for (DocumentSnapshot doc : querySnapshot.get().getDocuments()) {
+        for (QueryDocumentSnapshot doc : documents) {
             reviews.add(doc.toObject(Review.class));
         }
         return reviews;
     }
+    // === KẾT THÚC HÀM MỚI ===
+
     public Review getById(String id) throws ExecutionException, InterruptedException {
         Firestore db = FirestoreClient.getFirestore();
         DocumentSnapshot snapshot = db.collection(COLLECTION_NAME).document(id).get().get();
@@ -66,7 +70,7 @@ public class ReviewRepository {
         db.collection(COLLECTION_NAME).document(id).delete();
     }
 
-    
+    // ✅ Generate next review ID: Rv1, Rv2, ...
     public String generateNextId() throws ExecutionException, InterruptedException {
         List<Review> reviews = getAll();
         int maxId = 0;

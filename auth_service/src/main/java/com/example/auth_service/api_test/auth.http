@@ -12,8 +12,8 @@ POST http://localhost:8081/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email": "user2@gmail.com",
-  "password": "123456"
+  "email": "anhdaik34@gmail.com",
+  "password": "vietanh123456"
 }
 
 ### Yêu cầu Đăng nhập (SAI MẬT KHẨU)
@@ -29,7 +29,7 @@ POST http://localhost:8081/api/v1/auth/forgot-password
 Content-Type: application/json
 
 {
-  "email": "use@gmail.com"
+  "email": "anhdaik34@gmail.com"
 }
 
 ###

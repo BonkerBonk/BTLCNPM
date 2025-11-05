@@ -30,11 +30,19 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getAllReviews());
     }
 
-    @GetMapping("/{movieId}")
-    public ResponseEntity<List<Review>> getByMovieId(@PathVariable String movieId) throws ExecutionException, InterruptedException {
-        List<Review> reviews = reviewService.getReviewsByMovieId(movieId);
-        return ResponseEntity.ok(reviews);
+    // === ENDPOINT MỚI BẮT BUỘC PHẢI THÊM ===
+    @GetMapping("/movie/{movieId}")
+    public ResponseEntity<List<Review>> getReviewsByMovieId(@PathVariable String movieId) throws ExecutionException, InterruptedException {
+        return ResponseEntity.ok(reviewService.getReviewsByMovieId(movieId));
     }
+    // === KẾT THÚC ENDPOINT MỚI ===
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Review> getById(@PathVariable String id) throws ExecutionException, InterruptedException {
+        Review review = reviewService.getReviewById(id);
+        return (review != null) ? ResponseEntity.ok(review) : ResponseEntity.notFound().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         reviewService.deleteReview(id);
