@@ -1,33 +1,55 @@
-package com.btlcnpm.androidapp // Thay package của bạn
+package com.btlcnpm.androidapp
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent // Hàm để hiển thị Compose UI
+import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.btlcnpm.androidapp.navigation.AppNavigation // Import NavHost của bạn
-import com.btlcnpm.androidapp.ui.theme.BTLCNPMTheme // Import Theme (tên có thể khác)
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
+import com.btlcnpm.androidapp.navigation.AppNavHost
+import com.btlcnpm.androidapp.ui.screens.AuthViewModel
+import com.btlcnpm.androidapp.ui.screens.BookingViewModel
+import com.btlcnpm.androidapp.ui.screens.MovieViewModel
+import com.btlcnpm.androidapp.ui.screens.TheaterViewModel // <<< THÊM IMPORT
+import com.btlcnpm.androidapp.ui.theme.AndroidAppTheme
 
-class MainActivity : ComponentActivity() { // Kế thừa từ ComponentActivity
+class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // setContent là điểm bắt đầu để hiển thị giao diện Compose
         setContent {
-            // Bọc toàn bộ ứng dụng trong Theme bạn đã định nghĩa (trong ui.theme)
-            // Theme này sẽ cung cấp màu sắc, font chữ,... mặc định
-            BTLCNPMTheme { // Đảm bảo tên Theme này đúng
-                // Surface là một container cơ bản với màu nền từ Theme
+            // Sử dụng AndroidAppTheme đã tạo
+            AndroidAppTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(), // Chiếm toàn bộ màn hình
-                    color = MaterialTheme.colorScheme.background // Lấy màu nền từ Theme
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
                 ) {
-                    // Gọi AppNavigation để hiển thị NavHost và màn hình đầu tiên (HomeScreen)
-                    AppNavigation()
+                    MainAppScreen() // Gọi Composable chính
                 }
             }
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun MainAppScreen() {
+    val navController = rememberNavController()
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
+    val movieViewModel: MovieViewModel = viewModel(factory = MovieViewModel.Factory)
+    val theaterViewModel: TheaterViewModel = viewModel(factory = TheaterViewModel.Factory)
+    val bookingViewModel: BookingViewModel = viewModel(factory = BookingViewModel.Factory)
+
+    AppNavHost(
+        navController = navController,
+        authViewModel = authViewModel,
+        movieViewModel = movieViewModel,
+        theaterViewModel = theaterViewModel // <<< TRUYỀN VÀO
+    )
 }
