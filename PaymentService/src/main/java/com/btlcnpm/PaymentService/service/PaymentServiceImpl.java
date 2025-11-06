@@ -58,27 +58,13 @@ public class PaymentServiceImpl implements PaymentService {
             restTemplate.postForObject(TICKET_SERVICE_URL, ticketRequest, String.class);
 
         } catch (Exception e) {
-            System.err.println("LỖI: Không thể kích hoạt TicketService: " + e.getMessage());
+            // Nếu tạo vé thất bại, hãy ném lỗi để app biết
+            System.err.println("LỖI NGHIÊM TRỌNG: Không thể kích hoạt TicketService: " + e.getMessage());
+            throw new Exception("Thanh toán thành công nhưng tạo vé thất bại: " + e.getMessage());
         }
 
 
-
-
-        /*
-
-        // GỌI PUSH NOTIFICATION SERVICE
-        try {
-            SendPushRequest pushRequest = new SendPushRequest(
-                booking.getUserId(),
-                "Thanh toán thành công!",
-                "Cảm ơn bạn đã đặt vé. Mã booking của bạn là: " + booking.getBookingId()
-            );
-            restTemplate.postForObject(PUSH_SERVICE_URL, pushRequest, Void.class);
-        } catch (Exception e) {
-            System.err.println("LỖI: Không thể gửi Push Notification: " + e.getMessage());
-        }
-
-        */
+        // ... (Code Push Notification)
 
         // Trả về thông báo thành công
         return "Thanh toán thành công.";
