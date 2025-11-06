@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.client.RestTemplate; // Thêm vào
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,5 +46,10 @@ public class FirebaseConfig {
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
+    }
+
+    @Bean
+    public FirebaseAuth firebaseAuth() {
+        return FirebaseAuth.getInstance();
     }
 }

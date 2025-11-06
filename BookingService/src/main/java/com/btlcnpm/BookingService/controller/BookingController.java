@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Map;
@@ -18,38 +20,65 @@ public class BookingController {
     @Autowired
     private BookingService bookingService;
 
-
-//     API tạo đơn đặt vé (trạng thái "PENDING")
-
+    /**
+     * API tạo đơn đặt vé (trạng thái "PENDING")
+     * Đã sửa: Trả về kết quả và bắt lỗi
+     */
     @PostMapping("/bookings")
     public ResponseEntity<?> createBooking(@RequestBody CreateBookingRequest request) {
 
-        String userId = "temp_user_id_123"; // Tạm thời
+        String userId;
+        try {
+            // Lấy userId thật từ token
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            userId = authentication.getPrincipal().toString();
+            if (userId == null || userId.equals("anonymousUser")) {
+                // Sửa: Trả về Map cho nhất quán
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Yêu cầu token xác thực."));
+            }
+        } catch (Exception e) {
+            // Sửa: Trả về Map cho nhất quán
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Token không hợp lệ hoặc thiếu."));
+        }
 
         try {
-            // Gọi logic  Service
+            // Gọi service với userId thật
             Booking newBooking = bookingService.createBooking(userId, request);
 
-            // Trả về đối tượng booking đã tạo
+            // SỬA LỖI 1: Trả về newBooking với mã 201 (CREATED)
             return ResponseEntity.status(HttpStatus.CREATED).body(newBooking);
 
-        } catch (Exception e) {
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e){
+            // SỬA LỖI 2: Bắt lỗi từ service (ví dụ: "Không đủ vé")
+            // và trả về mã 400 (BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
+        // SỬA LỖI 3: Xóa "return null;"
     }
 
 
-//     API lấy lịch sử đặt vé
-
+    /**
+     * API lấy lịch sử đặt vé
+     * Đã sửa: Lấy userId từ token thay vì @RequestHeader
+     */
     @GetMapping("/my-history")
     public ResponseEntity<?> getMyBookingHistory(
-            // Đọc userId từ Header (do Gateway gửi) hoặc dùng giá trị tạm
-            @RequestHeader(value = "X-User-Id", defaultValue = "temp_user_id_123") String userId,
             @RequestParam(required = false) String status) { // Tham số ?status=SUCCESSFUL (tùy chọn)
 
+        String userId;
         try {
+            // Lấy userId thật từ token
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            userId = authentication.getPrincipal().toString();
+            if (userId == null || userId.equals("anonymousUser")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Yêu cầu token xác thực."));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Token không hợp lệ hoặc thiếu."));
+        }
 
+        try {
+            // Gọi service với userId thật
             List<Booking> history = bookingService.getMyBookingHistory(userId, status);
             return ResponseEntity.ok(history); // Trả về danh sách
 
@@ -59,7 +88,9 @@ public class BookingController {
     }
 
 
-//    Từ Ticket service gọi đến
+    /**
+     * Từ Ticket service gọi đến (Không thay đổi)
+     */
     @GetMapping("/internal/{bookingId}")
     public ResponseEntity<?> getBookingDetails(@PathVariable String bookingId) {
         try {

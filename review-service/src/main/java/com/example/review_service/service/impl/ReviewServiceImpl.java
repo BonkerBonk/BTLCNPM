@@ -32,7 +32,7 @@ public class ReviewServiceImpl implements ReviewService {
         review.setRating(dto.getRating());
         review.setComment(dto.getComment());
         review.setUserFullName(dto.getUserFullName());
-        review.setCreatedAt(String.valueOf(Timestamp.now()));
+        review.setCreatedAt(Timestamp.now());
 
         // Tự sinh reviewId nếu chưa có
         String newId = generateReviewId();
