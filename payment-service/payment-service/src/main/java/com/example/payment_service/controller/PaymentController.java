@@ -23,7 +23,7 @@ public class PaymentController {
     @GetMapping("/payment")
     public ResponseEntity<?> createPayment() throws UnsupportedEncodingException {
         String orderType = "other";
-        long amount = 10000*100;
+        long amount = 10000*100;// ông get giá tiền của cả cái đơn hàng cần thanh toán vào đây
         String bankCode = "NCB";
 
         String vnp_TxnRef = ConfigVNpay.getRandomNumber(8);
