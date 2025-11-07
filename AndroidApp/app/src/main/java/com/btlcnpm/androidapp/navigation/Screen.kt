@@ -38,6 +38,13 @@ sealed class Screen(val route: String) {
     object BookingSuccess : Screen("booking_success_screen/{bookingId}") {
         fun createRoute(bookingId: String) = "booking_success_screen/$bookingId"
     }
+    // Route cho VNPay
+    object VnpayPayment : Screen("vnpay_payment_screen/{payUrl}/{bookingId}") {
+        fun createRoute(payUrl: String, bookingId: String): String {
+            val encodedUrl = java.net.URLEncoder.encode(payUrl, "UTF-8")
+            return "vnpay_payment_screen/$encodedUrl/$bookingId"
+        }
+    }
 
 }
     

@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.btlcnpm.androidapp.ui.screens.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.net.URLDecoder
 
 
 // Composable chính quản lý việc điều hướng giữa các màn hình
@@ -214,6 +215,32 @@ fun AppNavHost(
                 bookingId = bookingId,
                 navController = navController
             )
+        }
+        // === THÊM COMPOSABLE MỚI CHO VNPAY ===
+        composable(
+            route = Screen.VnpayPayment.route,
+            arguments = listOf(
+                navArgument("payUrl") { type = NavType.StringType },
+                navArgument("bookingId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val encodedUrl = backStackEntry.arguments?.getString("payUrl") ?: ""
+            val bookingId = backStackEntry.arguments?.getString("bookingId") ?: ""
+
+            val payUrl = try {
+                URLDecoder.decode(encodedUrl, "UTF-8")
+            } catch (e: Exception) { "" }
+
+            if (payUrl.isNotEmpty() && bookingId.isNotEmpty()) {
+                VnpayPaymentScreen(
+                    payUrl = payUrl,
+                    bookingId = bookingId,
+                    navController = navController,
+                    bookingViewModel = bookingViewModel
+                )
+            } else {
+                navController.popBackStack() // Quay lại nếu URL lỗi
+            }
         }
     }
 }

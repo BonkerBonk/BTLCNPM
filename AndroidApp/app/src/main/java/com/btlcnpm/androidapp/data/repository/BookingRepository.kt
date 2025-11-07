@@ -6,8 +6,7 @@ import com.btlcnpm.androidapp.data.remote.BetaCinemaApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
-import java.io.IOException
-
+import com.btlcnpm.androidapp.data.model.CheckoutRequest
 // Repository cho luồng đặt vé, thống nhất dùng suspend fun trả về Result
 class BookingRepository(
     private val apiService: BetaCinemaApi,
@@ -69,14 +68,14 @@ class BookingRepository(
     /**
      * Xử lý thanh toán.
      */
-    suspend fun processPayment(bookingId: String): Result<PaymentResponse> {
+    suspend fun processPayment(bookingId: String, paymentMethod: String): Result<Map<String, Any>> { // <<< PHẢI LÀ Result<Map<String, Any>>
         return withContext(Dispatchers.IO) {
-            // Hard-code "MOCK_SUCCESS" để luôn thành công
-            val request = CheckoutRequest(bookingId = bookingId, paymentMethod = "MOCK_SUCCESS")
+            val request = CheckoutRequest(bookingId = bookingId, paymentMethod = paymentMethod)
             try {
-                val response = apiService.processPayment(request)
+                val response = apiService.processPayment(request) // Gọi hàm đã sửa ở trên
+
                 if (response.isSuccessful && response.body() != null) {
-                    Result.success(response.body()!!)
+                    Result.success(response.body()!!) // Trả về Map
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Unknown error"
                     Log.e("BookingRepo", "Payment failed: ${response.code()} - $errorMsg")

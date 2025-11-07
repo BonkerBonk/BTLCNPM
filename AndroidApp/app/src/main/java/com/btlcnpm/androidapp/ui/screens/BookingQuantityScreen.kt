@@ -1,5 +1,6 @@
 package com.btlcnpm.androidapp.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -33,14 +34,32 @@ fun BookingQuantityScreen(
 
     // Lắng nghe trạng thái thanh toán
     LaunchedEffect(bookingState) {
-        if (bookingState is BookingUiState.Success) {
-            val bookingId = (bookingState as BookingUiState.Success).paymentResponse.bookingId
-            // Thanh toán OK -> Chuyển màn hình
-            navController.navigate(Screen.BookingSuccess.createRoute(bookingId)) {
-                // Xóa tất cả màn hình từ MovieList đến đây
-                popUpTo(Screen.MovieList.route) { inclusive = false }
+        when (val state = bookingState) {
+            is BookingUiState.MockSuccess -> {
+                // Thanh toán MOCK thành công -> Chuyển màn hình Success
+                navController.navigate(Screen.BookingSuccess.createRoute(state.bookingId)) {
+                    popUpTo(Screen.MovieList.route) { inclusive = false }
+                }
+                bookingViewModel.resetBookingState()
             }
-            bookingViewModel.resetBookingState() // Reset lại state
+            is BookingUiState.AwaitingMomoPayment -> {
+                // ĐÃ CÓ QR MOMO -> Chuyển màn hình MoMo
+                // (Giả sử bạn đã tạo màn hình này)
+                // navController.navigate(Screen.MomoPayment.createRoute(state.qrCodeUrl, state.bookingId))
+
+                // Tạm thời reset (vì chưa làm màn MoMo)
+                bookingViewModel.resetBookingState()
+                Log.d("Booking", "Nhận được QR MoMo (chưa có màn hình)")
+            }
+            // === LOGIC MỚI CHO VNPAY ===
+            is BookingUiState.AwaitingVnpayPayment -> {
+                // ĐÃ CÓ URL VNPAY -> Chuyển màn hình VnpayPayment
+                navController.navigate(
+                    Screen.VnpayPayment.createRoute(state.payUrl, state.bookingId)
+                )
+                // Không reset state vội
+            }
+            else -> {}
         }
     }
 
@@ -124,22 +143,59 @@ fun BookingQuantityScreen(
                     )
                 }
 
+                // === THÊM NÚT VNPAY ===
+
+                // Nút 1: Thanh toán MoMo
                 Button(
                     onClick = {
-                        bookingViewModel.startBookingFlow(showtimeId, quantity)
+                        bookingViewModel.startBookingFlow(showtimeId, quantity, "MOMO_QR")
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    enabled = bookingState !is BookingUiState.Loading,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFAE0069)) // Màu MoMo
+                ) {
+                    Text("Thanh toán bằng MoMo QR")
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Nút 2: Thanh toán VNPay
+                Button(
+                    onClick = {
+                        bookingViewModel.startBookingFlow(showtimeId, quantity, "VNPAY")
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    enabled = bookingState !is BookingUiState.Loading,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF005A9C)) // Màu xanh VNPay
+                ) {
+                    Text("Thanh toán bằng VNPay")
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Nút 3: Thanh toán Mock (để test)
+                OutlinedButton(
+                    onClick = {
+                        bookingViewModel.startBookingFlow(showtimeId, quantity, "MOCK_SUCCESS")
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
                     enabled = bookingState !is BookingUiState.Loading
                 ) {
-                    Text("Xác nhận Thanh toán")
+                    Text("Thanh toán Giả lập (Mock Success)")
                 }
             }
 
             // Lớp phủ Loading
             if (bookingState is BookingUiState.Loading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                Column(
+                    modifier = Modifier.fillMaxSize().align(Alignment.Center),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(16.dp))
+                    Text("Đang tạo đơn hàng...", textAlign = TextAlign.Center)
+                }
             }
         }
     }

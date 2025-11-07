@@ -73,7 +73,9 @@ interface BetaCinemaApi {
     // --- PAYMENT SERVICE (Port 8092) ---
     // API: POST /api/v1/payment/checkout
     @POST("http://10.0.2.2:8092/api/v1/payment/checkout")
-    suspend fun processPayment(@Body request: CheckoutRequest): Response<PaymentResponse>
+    suspend fun processPayment(
+        @Body request: CheckoutRequest
+    ): Response<Map<String, Any>>
 
     // --- TICKET SERVICE (Port 8093) ---
     // API: GET /api/v1/ticket/my-tickets
