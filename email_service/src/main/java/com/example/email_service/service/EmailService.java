@@ -22,9 +22,9 @@ public class EmailService {
     /**
      * Lấy thông tin và gửi lại vé qua email
      */
-    public void resendTicket(String bookingId) 
+    public void resendTicket(String bookingId)
             throws ExecutionException, InterruptedException, RuntimeException {
-        
+
         // 1. Lấy thông tin Đơn hàng (Booking)
         DocumentSnapshot bookingDoc = firestore.collection("bookings").document(bookingId).get().get();
         if (!bookingDoc.exists()) {
@@ -56,13 +56,13 @@ public class EmailService {
         // 4. Tạo nội dung Email
         String subject = "Vé xem phim của bạn cho đơn hàng #" + bookingId;
         String emailBody = String.format(
-            "Chào bạn,\n\nĐây là vé điện tử của bạn:\n" +
-            "- Đơn hàng: %s\n" +
-            "- Phim: %s\n" +
-            "- Rạp: %s\n" +
-            "- Giờ chiếu: %s\n\n" +
-            "Cảm ơn bạn đã đặt vé!",
-            bookingId, movieTitle, theaterName, showtime
+                "Chào bạn,\n\nĐây là vé điện tử của bạn:\n" +
+                        "- Đơn hàng: %s\n" +
+                        "- Phim: %s\n" +
+                        "- Rạp: %s\n" +
+                        "- Giờ chiếu: %s\n\n" +
+                        "Cảm ơn bạn đã đặt vé!",
+                bookingId, movieTitle, theaterName, showtime
         );
 
         // 5. Gửi Email
@@ -71,7 +71,29 @@ public class EmailService {
         message.setTo(userEmail); // Gửi đến email của người dùng
         message.setSubject(subject);
         message.setText(emailBody);
-        
+
+        javaMailSender.send(message); // Gửi
+    }
+    // --- HÀM GỬI LINK RESET MẬT KHẨU (MỚI) ---
+    public void sendPasswordResetEmail(String email, String link) {
+
+        // 1. Tạo nội dung Email
+        String subject = "Yêu cầu đặt lại mật khẩu cho tài khoản của bạn";
+        String emailBody = String.format(
+                "Chào bạn,\n\nChúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.\n" +
+                        "Vui lòng nhấp vào đường link sau để đặt lại mật khẩu:\n" +
+                        "%s\n\n" +
+                        "Nếu bạn không yêu cầu việc này, vui lòng bỏ qua email này.",
+                link
+        );
+
+        // 2. Gửi Email
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("cdcnpm.spring.beta@gmail.com"); // <-- SỬA LẠI: Email CỦA BẠN (phải khớp với application.properties)
+        message.setTo(email); // Gửi đến email của người dùng
+        message.setSubject(subject);
+        message.setText(emailBody);
+
         javaMailSender.send(message); // Gửi
     }
 }

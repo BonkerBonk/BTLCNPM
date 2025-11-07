@@ -32,7 +32,7 @@ public class ReviewServiceImpl implements ReviewService {
         review.setRating(dto.getRating());
         review.setComment(dto.getComment());
         review.setUserFullName(dto.getUserFullName());
-        review.setCreatedAt(String.valueOf(Timestamp.now()));
+        review.setCreatedAt(Timestamp.now());
 
         // Tự sinh reviewId nếu chưa có
         String newId = generateReviewId();
@@ -65,6 +65,13 @@ public class ReviewServiceImpl implements ReviewService {
     public List<Review> getAllReviews() throws ExecutionException, InterruptedException {
         return reviewRepository.getAll();
     }
+
+    // === THÊM TRIỂN KHAI CHO HÀM MỚI ===
+    @Override
+    public List<Review> getReviewsByMovieId(String movieId) throws ExecutionException, InterruptedException {
+        return reviewRepository.findByMovieId(movieId);
+    }
+    // === KẾT THÚC ===
 
     @Override
     public Review getReviewById(String id) throws ExecutionException, InterruptedException {

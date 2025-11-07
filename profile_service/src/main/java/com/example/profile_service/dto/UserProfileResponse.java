@@ -13,5 +13,5 @@ public class UserProfileResponse {
     private String fullName;
     private String phoneNumber;
     private String profileImageUrl;
-    private Timestamp dateOfBirth; // Giữ kiểu Timestamp
+    private String dateOfBirth; // Giữ kiểu Timestamp
 }

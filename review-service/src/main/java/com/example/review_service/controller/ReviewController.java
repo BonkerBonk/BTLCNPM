@@ -30,6 +30,13 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getAllReviews());
     }
 
+    // === ENDPOINT MỚI BẮT BUỘC PHẢI THÊM ===
+    @GetMapping("/movie/{movieId}")
+    public ResponseEntity<List<Review>> getReviewsByMovieId(@PathVariable String movieId) throws ExecutionException, InterruptedException {
+        return ResponseEntity.ok(reviewService.getReviewsByMovieId(movieId));
+    }
+    // === KẾT THÚC ENDPOINT MỚI ===
+
     @GetMapping("/{id}")
     public ResponseEntity<Review> getById(@PathVariable String id) throws ExecutionException, InterruptedException {
         Review review = reviewService.getReviewById(id);

@@ -41,6 +41,21 @@ public class ReviewRepository {
         return reviews;
     }
 
+    // === THÊM HÀM MỚI ĐỂ TÌM THEO MOVIE ID ===
+    public List<Review> findByMovieId(String movieId) throws ExecutionException, InterruptedException {
+        Firestore db = FirestoreClient.getFirestore();
+        ApiFuture<QuerySnapshot> query = db.collection(COLLECTION_NAME)
+                .whereEqualTo("movieId", movieId) // Tìm tất cả document có trường movieId khớp
+                .get();
+        List<QueryDocumentSnapshot> documents = query.get().getDocuments();
+        List<Review> reviews = new ArrayList<>();
+        for (QueryDocumentSnapshot doc : documents) {
+            reviews.add(doc.toObject(Review.class));
+        }
+        return reviews;
+    }
+    // === KẾT THÚC HÀM MỚI ===
+
     public Review getById(String id) throws ExecutionException, InterruptedException {
         Firestore db = FirestoreClient.getFirestore();
         DocumentSnapshot snapshot = db.collection(COLLECTION_NAME).document(id).get().get();
