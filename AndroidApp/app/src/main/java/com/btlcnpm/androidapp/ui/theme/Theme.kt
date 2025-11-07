@@ -1,4 +1,4 @@
-package com.btlcnpm.androidapp.ui.theme
+package com.btlcnpm.androidapp.ui.theme // Đảm bảo đúng package
 
 import android.app.Activity
 import android.os.Build
@@ -15,65 +15,61 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Bảng màu tối (Dark Theme) - Sử dụng màu mặc định Material 3
+// Bảng màu cho Chế độ Tối (Dark Mode)
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-    // Bạn có thể tùy chỉnh các màu khác ở đây
-    // background = Color(0xFF1C1B1F),
-    // surface = Color(0xFF1C1B1F),
-    // onPrimary = Color.Black,
-    // onSecondary = Color.Black,
-    // onTertiary = Color.Black,
-    // onBackground = Color(0xFFFFFBFE),
-    // onSurface = Color(0xFFFFFBFE),
+    primary = Purple80,         // Màu chính
+    secondary = PurpleGrey80,   // Màu phụ
+    tertiary = Pink80,          // Màu nhấn (Tertiary)
+    background = DarkGray,      // Màu nền
+    surface = DarkGray,         // Màu bề mặt (Card, Dialog,...)
+    onPrimary = Purple40,       // Màu chữ/icon trên nền Primary
+    onSecondary = PurpleGrey40, // Màu chữ/icon trên nền Secondary
+    onTertiary = Pink40,        // Màu chữ/icon trên nền Tertiary
+    onBackground = White,       // Màu chữ/icon trên nền Background
+    onSurface = White,          // Màu chữ/icon trên nền Surface
+    error = RedError            // Màu báo lỗi
+    // Bạn có thể tùy chỉnh các màu khác như surfaceVariant, outline,...
 )
 
-// Bảng màu sáng (Light Theme) - Sử dụng màu mặc định Material 3
+// Bảng màu cho Chế độ Sáng (Light Mode)
 private val LightColorScheme = lightColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,
-    tertiary = Pink40
-    // Bạn có thể tùy chỉnh các màu khác ở đây
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    tertiary = Pink40,
+    background = White,         // Nền trắng
+    surface = LightGray,        // Bề mặt màu xám nhạt
+    onPrimary = White,
+    onSecondary = White,
+    onTertiary = White,
+    onBackground = Black,       // Chữ đen
+    onSurface = Black,          // Chữ đen
+    error = RedError
+
+    /* Các màu mặc định khác sẽ được ghi đè nếu bạn định nghĩa ở đây */
 )
 
-// Hàm Composable chính để áp dụng theme
+// Composable function chính để áp dụng Theme
 @Composable
-fun BTLCNPMTheme( // Đặt tên là BTLCNPMTheme như bạn đã import
-    darkTheme: Boolean = isSystemInDarkTheme(), // Tự động phát hiện theme tối của hệ thống
-    // Dynamic color chỉ có trên Android 12+
-    dynamicColor: Boolean = true,
-    // Tham số content là một @Composable lambda, chứa giao diện chính của bạn
-    content: @Composable () -> Unit
+fun AndroidAppTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(), // Tự động phát hiện chế độ tối của hệ thống
+    // Dynamic color chỉ khả dụng trên Android 12+
+    dynamicColor: Boolean = true, // Cho phép sử dụng màu động từ hình nền (nếu hỗ trợ)
+    content: @Composable () -> Unit // Nội dung của ứng dụng sẽ nằm trong này
 ) {
-    // Xác định bảng màu sẽ sử dụng
+    // Chọn bảng màu phù hợp (sáng/tối, động/tĩnh)
     val colorScheme = when {
-        // Nếu bật dynamic color và chạy trên Android 12+
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            // Lấy màu từ hình nền của người dùng
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        // Nếu dùng theme tối
         darkTheme -> DarkColorScheme
-        // Nếu dùng theme sáng
         else -> LightColorScheme
     }
 
-    // Lấy View hiện tại để tùy chỉnh thanh trạng thái (status bar)
+    // Lấy View hiện tại để kiểm soát thanh trạng thái (status bar)
     val view = LocalView.current
-    if (!view.isInEditMode) { // Chỉ chạy khi ứng dụng đang chạy thực tế (không phải preview)
-        // SideEffect dùng để thực hiện các hành động không liên quan trực tiếp đến Compose UI
+    if (!view.isInEditMode) { // Chỉ chạy khi ứng dụng thực sự chạy (không phải preview)
+        // SideEffect dùng để thực hiện các thay đổi không thuộc Compose UI (như status bar)
         SideEffect {
             val window = (view.context as Activity).window
             // Đặt màu thanh trạng thái
@@ -83,10 +79,10 @@ fun BTLCNPMTheme( // Đặt tên là BTLCNPMTheme như bạn đã import
         }
     }
 
-    // Áp dụng MaterialTheme với bảng màu, kiểu chữ và nội dung đã chọn
+    // Áp dụng MaterialTheme với bảng màu, kiểu chữ đã chọn
     MaterialTheme(
-        colorScheme = colorScheme, // Áp dụng bảng màu
-        typography = Typography,   // Áp dụng kiểu chữ (Typography phải được định nghĩa trong Type.kt)
-        content = content          // Hiển thị nội dung (AppNavigation) bên trong theme này
+        colorScheme = colorScheme,
+        typography = Typography, // Sử dụng Typography từ file Type.kt
+        content = content        // Hiển thị nội dung ứng dụng bên trong Theme
     )
 }
