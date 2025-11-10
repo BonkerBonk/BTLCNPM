@@ -1,6 +1,7 @@
 // com/btlcnpm/androidapp/ui/screens/VnpayPaymentScreen.kt
 package com.btlcnpm.androidapp.ui.screens
 
+import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.*
@@ -114,7 +115,13 @@ fun VnpayPaymentScreen(
                 factory = { context ->
                     WebView(context).apply {
                         settings.javaScriptEnabled = true
-                        webViewClient = WebViewClient() // Client mặc định
+                        webViewClient = object : WebViewClient() {
+                            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                                Log.d("VnpayPaymentScreen", "WebView is loading URL: $url")
+                                // Để WebView tự xử lý URL
+                                return super.shouldOverrideUrlLoading(view, url)
+                            }
+                        }
                         loadUrl(payUrl) // Tải URL thanh toán
                     }
                 },

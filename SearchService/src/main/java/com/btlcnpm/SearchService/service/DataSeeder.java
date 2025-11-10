@@ -19,7 +19,7 @@ public class DataSeeder {
     }
 
     // (QUAN TRỌNG) Đảm bảo dòng @PostConstruct này KHÔNG bị comment
-    @PostConstruct
+    //@PostConstruct
     public void seedDatabase() {
         System.out.println("--- BẮT ĐẦU THÊM DỮ LIỆU MẪU (SEEDING) ---");
         try {
