@@ -1,14 +1,12 @@
 package com.example.payment_service.controller;
 
 import com.example.payment_service.config.ConfigVNpay;
-// XÓA: import com.example.payment_service.response.PaymentResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
-// === THÊM IMPORT NÀY ===
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.UnsupportedEncodingException;
@@ -28,29 +26,22 @@ public class PaymentController {
     private RestTemplate restTemplate;
 
     // URL này trỏ đến API Gateway (cổng 8080)
-    // Gateway sẽ điều hướng đến BookingService (cổng 8091)
     private final String BOOKING_SERVICE_URL = "http://localhost:8080/api/v1/booking/internal/";
-
-    // === THÊM URL CỦA TICKET SERVICE ===
-    // Trỏ qua Gateway (8080) đến TicketService (8093)
     private final String TICKET_SERVICE_URL = "http://localhost:8080/api/v1/ticket/internal/create";
 
 
-    // === SỬA PHƯƠNG THỨC VÀ ĐƯỜNG DẪN ĐỂ KHỚP VỚI ANDROID ===
     @PostMapping("/checkout")
     public ResponseEntity<?> createPayment(
             @RequestBody CheckoutRequest request,
-            HttpServletRequest httpServletRequest // <<< SỬA 1: Thêm HttpServletRequest
+            HttpServletRequest httpServletRequest
     ) throws UnsupportedEncodingException {
 
-        // Lấy bookingId từ request DTO
         String bookingId = request.getBookingId();
 
         // === BƯỚC 1: LẤY SỐ TIỀN TỪ BOOKING SERVICE ===
         long amount;
         BookingDTO booking;
         try {
-            // Gọi đến BookingService (qua Gateway)
             String url = BOOKING_SERVICE_URL + bookingId;
             booking = restTemplate.getForObject(url, BookingDTO.class);
 
@@ -64,19 +55,12 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Lỗi khi lấy thông tin đơn hàng: " + e.getMessage()));
         }
-        // === KẾT THÚC BƯỚC 1 ===
 
-
-        // === BƯỚC 2: TẠO URL THANH TOÁN (Code của bạn) ===
+        // === BƯỚC 2: TẠO URL THANH TOÁN ===
         String orderType = "other";
-        String bankCode = "NCB"; // Ngân hàng mặc định
-
+        String bankCode = "NCB";
         String vnp_TxnRef = bookingId;
-
-        // === SỬA 2: Lấy IP thật từ request, thay vì "127.0.0.1" ===
-        // Dùng hàm getIpAddress (đã có sẵn trong ConfigVNpay)
-        String vnp_IpAddr = "58.187.59.171";
-
+        String vnp_IpAddr = ConfigVNpay.getIpAddress(httpServletRequest);
         String vnp_TmnCode = ConfigVNpay.vnp_TmnCode;
 
         Map<String, String> vnp_Params = new HashMap<>();
@@ -85,18 +69,16 @@ public class PaymentController {
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
         vnp_Params.put("vnp_Amount", String.valueOf(amount));
         vnp_Params.put("vnp_CurrCode", "VND");
-
         vnp_Params.put("vnp_BankCode", bankCode);
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
         vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang:" + vnp_TxnRef);
         vnp_Params.put("vnp_OrderType", orderType);
         vnp_Params.put("vnp_Locale", "vn");
         vnp_Params.put("vnp_ReturnUrl", ConfigVNpay.vnp_ReturnUrl);
-        vnp_Params.put("vnp_IpAddr", vnp_IpAddr); // <<< SỬA 2 (Tiếp): Giờ nó là IP thật
+        vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-// ... (Phần còn lại của code tạo URL giữ nguyên) ...
         String vnp_CreateDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
 
@@ -139,21 +121,17 @@ public class PaymentController {
         return ResponseEntity.ok(responseMap);
     }
 
-    // API callback (Giữ nguyên, không thay đổi)
     @GetMapping("/payment-callback")
     public ResponseEntity<?> paymentCallback(@RequestParam Map<String, String> queryParams) {
-// ... (Code của hàm này giữ nguyên) ...
         String vnp_ResponseCode = queryParams.get("vnp_ResponseCode");
+        String bookingId = queryParams.get("vnp_TxnRef");
 
         // TODO: Xác thực chữ ký (vnp_SecureHash) từ VNPay
-        // (Tạm thời bỏ qua để tập trung vào luồng chính)
 
         if ("00".equals(vnp_ResponseCode)) {
+            // ===== THANH TOÁN THÀNH CÔNG =====
             try {
-                // Lấy lại bookingId từ vnp_TxnRef (đã được gán ở /checkout)
-                String bookingId = queryParams.get("vnp_TxnRef");
-
-                // Gọi BookingService LẦN NỮA để lấy userId
+                // Lấy userId từ BookingService
                 String url = BOOKING_SERVICE_URL + bookingId;
                 BookingDTO booking = restTemplate.getForObject(url, BookingDTO.class);
 
@@ -161,23 +139,38 @@ public class PaymentController {
                     throw new Exception("Callback không tìm thấy booking hoặc userId.");
                 }
 
-                // Kích hoạt TicketService (TV5) tạo vé
+                // Kích hoạt TicketService tạo vé
                 TriggerTicketRequest ticketRequest = new TriggerTicketRequest(bookingId, booking.getUserId());
                 restTemplate.postForObject(TICKET_SERVICE_URL, ticketRequest, Map.class);
 
-                // TODO: Cập nhật trạng thái Booking sang "SUCCESSFUL"
-                // (Cần thêm API internal/update-status bên BookingService)
+                // ===== CẬP NHẬT TRẠNG THÁI BOOKING SANG "SUCCESSFUL" =====
+                try {
+                    restTemplate.put(
+                            BOOKING_SERVICE_URL + bookingId + "/status",
+                            Map.of("status", "SUCCESSFUL"),
+                            Void.class
+                    );
+                } catch (Exception e) {
+                    System.err.println("CẢNH BÁO: Không thể cập nhật status booking: " + e.getMessage());
+                }
 
-                // Trả về cho VNPay (và cho người dùng nếu họ bị redirect)
                 return ResponseEntity.ok(Map.of("message", "Thanh toán thành công, vé đang được xử lý."));
 
             } catch (Exception e) {
-                // Lỗi phía server sau khi VNPay báo thành công (nghiêm trọng)
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of("message", "Lỗi server sau khi thanh toán: " + e.getMessage()));
             }
         } else {
-            // TODO: Cập nhật trạng thái Booking sang "FAILED"
+            // ===== THANH TOÁN THẤT BẠI =====
+            try {
+                restTemplate.put(
+                        BOOKING_SERVICE_URL + bookingId + "/status",
+                        Map.of("status", "FAILED"),
+                        Void.class
+                );
+            } catch (Exception e) {
+                System.err.println("CẢNH BÁO: Không thể cập nhật status booking sang FAILED: " + e.getMessage());
+            }
 
             return ResponseEntity.badRequest().body(Map.of("message", "Thanh toán thất bại"));
         }

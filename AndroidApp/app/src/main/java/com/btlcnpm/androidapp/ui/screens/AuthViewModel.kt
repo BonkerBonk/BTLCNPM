@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
+import org.json.JSONObject
 
 // Trạng thái cho quá trình Authentication (Login/Register)
 sealed class AuthUiState {
@@ -200,12 +201,28 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
     private fun parseErrorMessage(throwable: Throwable): String {
         return when (throwable) {
             is HttpException -> {
-                // === LOGIC MỚI: BẮT LỖI 401 ===
+                // Ưu tiên 1: Lỗi 401 (Sai mật khẩu)
                 if (throwable.code() == 401) {
-                    // Kiểm tra nếu là lỗi 401, trả về thông báo thân thiện
                     return "Email hoặc mật khẩu không chính xác."
                 }
-                // === LOGIC CŨ CHO CÁC LỖI HTTP KHÁC ===
+
+                // --- BẮT ĐẦU SỬA ---
+                // Ưu tiên 2: Thử đọc JSON body để lấy "message"
+                // (Áp dụng cho lỗi 400 "Email đã tồn tại" và các lỗi khác)
+                try {
+                    val errorBody = throwable.response()?.errorBody()?.string()
+                    if (errorBody != null) {
+                        val jsonObject = JSONObject(errorBody)
+                        if (jsonObject.has("message")) {
+                            return jsonObject.getString("message") // Trả về "Email đã tồn tại."
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Lỗi khi parse JSON, sẽ đi tiếp xuống lỗi chung
+                }
+                // --- KẾT THÚC SỬA ---
+
+                // Ưu tiên 3: Lỗi chung nếu không parse được
                 val errorBody = throwable.response()?.errorBody()?.string()
                 "Error ${throwable.code()}: ${throwable.message()} ${errorBody?.take(100) ?: ""}"
             }

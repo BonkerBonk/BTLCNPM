@@ -1,4 +1,4 @@
-package com.btlcnpm.BookingService.config; // <<< SỬA LẠI TÊN PACKAGE
+package com.btlcnpm.BookingService.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -14,7 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Autowired
-    private FirebaseTokenFilter firebaseTokenFilter; // (Tự động inject file bạn vừa tạo)
+    private FirebaseTokenFilter firebaseTokenFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -23,11 +23,16 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(firebaseTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authz -> authz
-                        // === SỬA ĐƯỜNG DẪN NÀY ===
-                        .requestMatchers("/api/v1/booking/bookings").authenticated() // Bảo mật API tạo booking
-                        .requestMatchers("/api/v1/booking/my-history").authenticated() // Bảo mật API xem lịch sử
+                        // Bảo mật API tạo booking
+                        .requestMatchers("/api/v1/booking/bookings").authenticated()
+                        // Bảo mật API xem lịch sử
+                        .requestMatchers("/api/v1/booking/my-history").authenticated()
 
-                        // Các API khác (như /internal/create) không cần bảo mật
+                        // ===== CẬP NHẬT: Các API internal không cần bảo mật =====
+                        // (được gọi từ các service khác, không từ client)
+                        .requestMatchers("/api/v1/booking/internal/**").permitAll()
+
+                        // Các API khác
                         .anyRequest().permitAll()
                 );
 

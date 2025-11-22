@@ -14,7 +14,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
+import org.json.JSONObject
+import java.io.IOException // Đảm bảo bạn có cả import này
+import retrofit2.HttpException // Và import này
 // Trạng thái cho màn hình chọn suất chiếu
 sealed class ShowtimeUiState {
     // <<< SỬA LỖI 1: Các trạng thái này phải kế thừa từ ShowtimeUiState
@@ -65,7 +67,7 @@ class BookingViewModel(
                 _showtimeUiState.value = ShowtimeUiState.Success(filtered)
 
             }.onFailure { e ->
-                _showtimeUiState.value = ShowtimeUiState.Error(e.message ?: "Lỗi không xác định")
+                _showtimeUiState.value = ShowtimeUiState.Error(parseErrorMessage(e))
             }
         }
     }
@@ -83,7 +85,7 @@ class BookingViewModel(
             bookingResult.onSuccess { bookingResponse ->
                 bookingId = bookingResponse.bookingId
             }.onFailure { e ->
-                _bookingUiState.value = BookingUiState.Error(e.message ?: "Lỗi tạo Booking")
+                _bookingUiState.value = BookingUiState.Error(parseErrorMessage(e))
                 return@launch
             }
 
@@ -120,7 +122,7 @@ class BookingViewModel(
                     _bookingUiState.value = BookingUiState.MockSuccess(bookingId!!)
                 }
             }.onFailure { e ->
-                _bookingUiState.value = BookingUiState.Error(e.message ?: "Lỗi khi gọi thanh toán")
+                _bookingUiState.value = BookingUiState.Error(parseErrorMessage(e))
             }
         }
     }
@@ -166,6 +168,36 @@ class BookingViewModel(
 
     fun resetShowtimeState() {
         _showtimeUiState.value = ShowtimeUiState.Idle
+    }
+
+    // Hàm này sẽ đọc lỗi JSON từ backend
+    private fun parseErrorMessage(throwable: Throwable): String {
+        return when (throwable) {
+            is HttpException -> {
+                // Ưu tiên 1: Lỗi 401 (Sai mật khẩu) - Dù ở đâu cũng nên có
+                if (throwable.code() == 401) {
+                    return "Phiên đăng nhập hết hạn hoặc không hợp lệ."
+                }
+
+                // Ưu tiên 2: Thử đọc JSON body để lấy "message"
+                try {
+                    val errorBody = throwable.response()?.errorBody()?.string()
+                    if (errorBody != null) {
+                        val jsonObject = JSONObject(errorBody)
+                        if (jsonObject.has("message")) {
+                            return jsonObject.getString("message") // Ví dụ: "Không đủ vé."
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Lỗi khi parse JSON, sẽ đi tiếp xuống lỗi chung
+                }
+
+                // Ưu tiên 3: Lỗi chung nếu không parse được
+                "Error ${throwable.code()}: ${throwable.message()}"
+            }
+            is IOException -> "Lỗi mạng. Vui lòng kiểm tra kết nối."
+            else -> throwable.localizedMessage ?: "Đã xảy ra lỗi không xác định."
+        }
     }
 
     // Factory

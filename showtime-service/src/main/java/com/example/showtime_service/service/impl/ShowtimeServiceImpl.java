@@ -100,7 +100,36 @@ public class ShowtimeServiceImpl implements ShowtimeService {
         future.get();
     }
 
+    @Override
+    @SuppressWarnings("deprecation")
+    public void rollbackTickets(String showtimeId, int quantityToRestore) throws Exception {
+        DocumentReference showtimeRef = firestore.collection(COLLECTION_NAME).document(showtimeId);
 
+        ApiFuture<Void> future = firestore.runTransaction(transaction -> {
+            DocumentSnapshot snapshot = transaction.get(showtimeRef).get();
+
+            if (!snapshot.exists()) {
+                throw new ExecutionException(new Exception("Suất chiếu không tồn tại: " + showtimeId));
+            }
+
+            Showtime showtime = snapshot.toObject(Showtime.class);
+            int currentTickets = showtime.getAvailableTickets();
+            int totalTickets = showtime.getTotalTickets();
+
+            // Hoàn lại vé (cộng thêm)
+            int newAvailableTickets = currentTickets + quantityToRestore;
+
+            // Đảm bảo không vượt quá tổng số vé
+            if (newAvailableTickets > totalTickets) {
+                newAvailableTickets = totalTickets;
+            }
+
+            transaction.update(showtimeRef, "availableTickets", newAvailableTickets);
+            return null;
+        });
+
+        future.get();
+    }
     //  Hàm tự sinh ID tăng dần theo định dạng ST001, ST002...
     private String generateNextShowtimeId() throws ExecutionException, InterruptedException {
         CollectionReference colRef = firestore.collection(COLLECTION_NAME);
@@ -124,4 +153,5 @@ public class ShowtimeServiceImpl implements ShowtimeService {
         int nextId = max + 1;
         return String.format("ST%03d", nextId); // Ex: ST001, ST002,...
     }
+
 }

@@ -14,4 +14,5 @@ public interface ShowtimeService {
 
     // <<< THÊM HÀM MỚI NÀY ĐỂ TV5 GỌI >>>
     void updateAvailableTickets(UpdateTicketsRequest request) throws Exception;
+    void rollbackTickets(String showtimeId, int quantityToRestore) throws Exception;
 }

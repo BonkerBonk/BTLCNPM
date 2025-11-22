@@ -80,4 +80,22 @@ public class ShowtimeController {
             return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
         }
     }
+
+    @PostMapping("/internal/rollback-tickets")
+    public ResponseEntity<?> rollbackTickets(@RequestBody Map<String, Object> request) {
+        try {
+            String showtimeId = (String) request.get("showtimeId");
+            Integer quantity = (Integer) request.get("quantity");
+
+            if (showtimeId == null || quantity == null || quantity <= 0) {
+                return ResponseEntity.status(400)
+                        .body(Map.of("message", "showtimeId và quantity (>0) là bắt buộc"));
+            }
+
+            showtimeService.rollbackTickets(showtimeId, quantity);
+            return ResponseEntity.ok(Map.of("message", "Hoàn vé thành công."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", e.getMessage()));
+        }
+    }
 }

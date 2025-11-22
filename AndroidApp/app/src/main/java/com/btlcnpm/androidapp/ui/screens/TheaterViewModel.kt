@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
-
+import org.json.JSONObject
 // Trạng thái cho danh sách rạp
 sealed class TheaterListUiState {
     object Idle : TheaterListUiState()
@@ -90,11 +90,33 @@ class TheaterViewModel(private val theaterRepository: TheaterRepository) : ViewM
     }
 
     // Hàm helper để phân tích lỗi
+    // Hàm này sẽ đọc lỗi JSON từ backend
     private fun parseErrorMessage(throwable: Throwable): String {
         return when (throwable) {
-            is HttpException -> "Error ${throwable.code()}: API Server Error (Port 8086)."
-            is IOException -> "Network error. Please check connection to 10.0.2.2:8086."
-            else -> throwable.localizedMessage ?: "An unexpected error occurred."
+            is HttpException -> {
+                // Ưu tiên 1: Lỗi 401 (Sai mật khẩu) - Dù ở đâu cũng nên có
+                if (throwable.code() == 401) {
+                    return "Phiên đăng nhập hết hạn hoặc không hợp lệ."
+                }
+
+                // Ưu tiên 2: Thử đọc JSON body để lấy "message"
+                try {
+                    val errorBody = throwable.response()?.errorBody()?.string()
+                    if (errorBody != null) {
+                        val jsonObject = JSONObject(errorBody)
+                        if (jsonObject.has("message")) {
+                            return jsonObject.getString("message") // Ví dụ: "Không đủ vé."
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Lỗi khi parse JSON, sẽ đi tiếp xuống lỗi chung
+                }
+
+                // Ưu tiên 3: Lỗi chung nếu không parse được
+                "Error ${throwable.code()}: ${throwable.message()}"
+            }
+            is IOException -> "Lỗi mạng. Vui lòng kiểm tra kết nối."
+            else -> throwable.localizedMessage ?: "Đã xảy ra lỗi không xác định."
         }
     }
 
