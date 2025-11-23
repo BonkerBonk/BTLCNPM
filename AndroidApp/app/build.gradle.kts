@@ -52,7 +52,7 @@ android {
 }
 
 dependencies {
-
+    implementation("androidx.browser:browser:1.8.0")
     implementation(libs.androidx.core.ktx) // Giữ lại core-ktx
 
     // Đã xóa: appcompat, material (view), activity, constraintlayout, compose.ui.unit

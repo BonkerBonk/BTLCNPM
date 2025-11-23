@@ -1,9 +1,9 @@
-// com/btlcnpm/androidapp/ui/screens/VnpayPaymentScreen.kt
 package com.btlcnpm.androidapp.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -11,15 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.btlcnpm.androidapp.navigation.Screen
-import java.net.URL
-import java.net.URLDecoder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,12 +25,28 @@ fun VnpayPaymentScreen(
     payUrl: String,
     bookingId: String,
     navController: NavController,
-    bookingViewModel: BookingViewModel
+    bookingViewModel: BookingViewModel = viewModel(factory = BookingViewModel.Factory)
 ) {
+    val context = LocalContext.current
     val bookingState by bookingViewModel.bookingUiState.collectAsState()
     var isPolling by remember { mutableStateOf(false) }
     var isPaymentCompleted by remember { mutableStateOf(false) }
-    var paymentStatus by remember { mutableStateOf("") } // "success", "failure", "pending"
+
+    // Mở Chrome Custom Tabs ngay khi màn hình được tạo
+    LaunchedEffect(key1 = Unit) {
+        try {
+            Log.d("VnpayPaymentScreen", "Opening URL in Chrome Custom Tabs: $payUrl")
+
+            val builder = CustomTabsIntent.Builder()
+            builder.setShowTitle(true)
+            val customTabsIntent = builder.build()
+            customTabsIntent.launchUrl(context, Uri.parse(payUrl))
+
+            Log.d("VnpayPaymentScreen", "Chrome Custom Tabs opened successfully")
+        } catch (e: Exception) {
+            Log.e("VnpayPaymentScreen", "Error opening Chrome Custom Tabs: ${e.message}")
+        }
+    }
 
     // Bắt đầu Polling khi màn hình được hiển thị
     LaunchedEffect(key1 = bookingId) {
@@ -46,7 +60,6 @@ fun VnpayPaymentScreen(
     LaunchedEffect(key1 = bookingState) {
         if (bookingState is BookingUiState.MockSuccess && !isPaymentCompleted) {
             isPaymentCompleted = true
-            paymentStatus = "success"
             // Sau 2 giây, chuyển sang màn Success
             kotlinx.coroutines.delay(2000)
             navController.navigate(Screen.BookingSuccess.createRoute(bookingId)) {
@@ -80,36 +93,34 @@ fun VnpayPaymentScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(padding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Hiển thị thanh trạng thái
+            // Icon loading
+            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+
+            Spacer(Modifier.height(24.dp))
+
+            // Hiển thị trạng thái
             when {
-                paymentStatus == "success" -> {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            "Thanh toán thành công! Đang chuyển hướng...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                bookingState is BookingUiState.MockSuccess -> {
+                    Text(
+                        "✅ Thanh toán thành công!\nĐang chuyển hướng...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
                 }
                 bookingState is BookingUiState.Error -> {
                     Text(
                         text = (bookingState as BookingUiState.Error).message,
                         color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(16.dp)
+                        textAlign = TextAlign.Center
                     )
+                    Spacer(Modifier.height(16.dp))
                     Button(onClick = {
                         bookingViewModel.resetBookingState()
                         navController.popBackStack()
@@ -118,133 +129,49 @@ fun VnpayPaymentScreen(
                     }
                 }
                 bookingState is BookingUiState.Loading -> {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            "Đang chờ xác nhận thanh toán...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        "Đang chờ xác nhận thanh toán...\n\nVui lòng hoàn tất thanh toán trong trình duyệt.\nSau khi thanh toán xong, vé sẽ tự động hiển thị.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
 
-            // --- HIỂN THỊ WEBVIEW (nếu thanh toán chưa hoàn tất) ---
-            if (paymentStatus != "success") {
-                AndroidView(
-                    factory = { context ->
-                        WebView(context).apply {
-                            settings.apply {
-                                javaScriptEnabled = true
-                                domStorageEnabled = true
-                                databaseEnabled = true
-                                // Cho phép mixed content để load được resource từ HTTP trên HTTPS
-                                mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                            }
+            Spacer(Modifier.height(24.dp))
 
-                            webViewClient = object : WebViewClient() {
-                                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                                    if (url == null) return false
-
-                                    Log.d("VnpayWebView", "URL Loading: $url")
-
-                                    // Kiểm tra nếu là callback URL từ VNPay
-                                    if (isVnpayCallbackUrl(url)) {
-                                        Log.d("VnpayWebView", "Detected VNPay callback URL")
-                                        val responseCode = extractResponseCode(url)
-
-                                        // 00 = Thành công, các mã khác là thất bại
-                                        if (responseCode == "00") {
-                                            Log.d("VnpayWebView", "Payment successful! Response code: $responseCode")
-                                            paymentStatus = "success"
-                                            // Polling sẽ tự động chạy để kiểm tra vé
-                                        } else {
-                                            Log.d("VnpayWebView", "Payment failed with code: $responseCode")
-                                            paymentStatus = "failure"
-                                        }
-                                        return true // Ngăn WebView load URL này
-                                    }
-
-                                    // Cho phép các URL khác load bình thường (bao gồm OTP screen)
-                                    return false
-                                }
-
-                                override fun onPageFinished(view: WebView?, url: String?) {
-                                    super.onPageFinished(view, url)
-                                    Log.d("VnpayWebView", "Page finished loading: $url")
-                                }
-
-                                override fun onReceivedError(
-                                    view: WebView?,
-                                    request: android.webkit.WebResourceRequest?,
-                                    error: android.webkit.WebResourceError?
-                                ) {
-                                    super.onReceivedError(view, request, error)
-                                    Log.e("VnpayWebView", "Error loading: ${error?.description}")
-                                }
-                            }
-
-                            // Load URL thanh toán
-                            loadUrl(payUrl)
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
+            // Hướng dẫn
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        "ℹ️ Hướng dẫn:",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "1. Hoàn tất thanh toán trong trình duyệt\n" +
+                                "2. Sau khi thanh toán thành công, quay lại app\n" +
+                                "3. Vé của bạn sẽ tự động xuất hiện\n\n" +
+                                "💡 Nếu không tự động chuyển, vui lòng bấm nút \"Quay lại\" và kiểm tra mục \"Vé của tôi\"",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Nút hủy
+            OutlinedButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Hủy và Quay Lại")
             }
         }
-    }
-}
-
-/**
- * Kiểm tra xem URL có phải là callback URL từ VNPay không.
- * VNPay sẽ redirect đến Return URL (mà bạn đã cấu hình) với các tham số phản hồi
- */
-private fun isVnpayCallbackUrl(url: String): Boolean {
-    // Kiểm tra các mẫu URL callback từ VNPay
-    return url.contains("response_code") ||
-            url.contains("vnp_ResponseCode") ||
-            url.contains("vnp_TxnRef") ||
-            url.contains("return-url") ||
-            url.contains("payment-return") ||
-            url.contains("vnpay-callback")
-}
-
-/**
- * Trích xuất mã phản hồi từ URL callback
- * VNPay trả về vnp_ResponseCode=00 (thành công) hoặc mã khác (thất bại)
- */
-private fun extractResponseCode(url: String): String {
-    return try {
-        val uri = URL(url)
-        val query = uri.query ?: ""
-
-        Log.d("VnpayPaymentScreen", "Full URL: $url")
-        Log.d("VnpayPaymentScreen", "Query string: $query")
-
-        val params = mutableMapOf<String, String>()
-        query.split("&").forEach { param ->
-            if (param.contains("=")) {
-                val parts = param.split("=", limit = 2)
-                val key = parts[0]
-                val value = if (parts.size > 1) URLDecoder.decode(parts[1], "UTF-8") else ""
-                params[key] = value
-                Log.d("VnpayPaymentScreen", "Param: $key = $value")
-            }
-        }
-
-        // VNPay sử dụng vnp_ResponseCode
-        val responseCode = params["vnp_ResponseCode"] ?: params["response_code"] ?: ""
-        Log.d("VnpayPaymentScreen", "Response code extracted: $responseCode")
-        responseCode
-    } catch (e: Exception) {
-        Log.e("VnpayPaymentScreen", "Error parsing response code: ${e.message}")
-        ""
     }
 }

@@ -22,11 +22,11 @@ public class TicketServiceImpl implements TicketService {
     private RestTemplate restTemplate;
 
     // --- Định nghĩa URL của các service liên quan ---
-    private final String BOOKING_SERVICE_URL = "http://localhost:8091/api/v1/booking/internal";
-    private final String SHOWTIME_SERVICE_URL = "http://localhost:8089/api/v1/showtime/showtimes";
-    private final String MOVIE_SERVICE_URL = "http://localhost:8085/api/v1/movies"; // Sửa lại URL cho đúng (movies)
-    private final String THEATER_SERVICE_URL = "http://localhost:8086/api/v1/theaters"; // Sửa lại URL cho đúng (theaters)
-    private final String ROOM_SERVICE_URL = "http://localhost:8088/api/v1/rooms"; // (Vẫn cần xác nhận API này)
+    private final String BOOKING_SERVICE_URL = "http://localhost:8080/api/v1/booking/internal";
+    private final String SHOWTIME_SERVICE_URL = "http://localhost:8080/api/v1/showtime/showtimes";
+    private final String MOVIE_SERVICE_URL = "http://localhost:8080/api/v1/movies"; // Sửa lại URL cho đúng (movies)
+    private final String THEATER_SERVICE_URL = "http://localhost:8080/api/v1/theaters"; // Sửa lại URL cho đúng (theaters)
+    private final String ROOM_SERVICE_URL = "http://localhost:8080/api/v1/rooms"; // (Vẫn cần xác nhận API này)
 
     @Override
     public void createTicketsForBooking(TriggerTicketRequest request) throws Exception {

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/ticket")
@@ -25,9 +26,9 @@ public class TicketController {
     public ResponseEntity<?> createTickets(@RequestBody TriggerTicketRequest request) {
         try {
             ticketService.createTicketsForBooking(request);
-            return ResponseEntity.ok("Tạo vé thành công.");
+            return ResponseEntity.ok(Map.of("message", "Tạo vé thành công.")); // ✅ Trả về JSON
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Lỗi khi tạo vé: " + e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("message", "Lỗi khi tạo vé: " + e.getMessage())); // ✅ Trả về JSON
         }
     }
 

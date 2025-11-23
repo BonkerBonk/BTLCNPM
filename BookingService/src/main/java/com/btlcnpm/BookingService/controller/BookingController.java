@@ -105,4 +105,32 @@ public class BookingController {
         }
     }
 
+    @PutMapping("/internal/{bookingId}/status")
+    public ResponseEntity<?> updateBookingStatus(
+            @PathVariable String bookingId,
+            @RequestBody Map<String, String> request) {
+
+        try {
+            String newStatus = request.get("status");
+
+            if (newStatus == null || newStatus.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Thiếu trường 'status'"));
+            }
+
+            boolean updated = bookingService.updateBookingStatus(bookingId, newStatus);
+
+            if (updated) {
+                return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái thành công"));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Không tìm thấy booking"));
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
 }
