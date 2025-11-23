@@ -25,8 +25,8 @@ public class PaymentController {
     @Autowired
     private RestTemplate restTemplate;
 
-    private final String BOOKING_SERVICE_URL = "http://localhost:8080/api/v1/booking/internal/";
-    private final String TICKET_SERVICE_URL = "http://localhost:8080/api/v1/ticket/internal/create";
+    private final String BOOKING_SERVICE_URL = "http://localhost:8091/api/v1/booking/internal/";
+    private final String TICKET_SERVICE_URL = "http://localhost:8093/api/v1/ticket/internal/create";
 
     @PostMapping("/checkout")
     public ResponseEntity<?> createPayment(
@@ -158,43 +158,72 @@ public class PaymentController {
 
         if ("00".equals(vnp_ResponseCode)) {
             try {
+                // BƯỚC 1: Lấy thông tin booking
                 String url = BOOKING_SERVICE_URL + bookingId;
+                System.out.println("📞 Gọi GET: " + url);
+
                 BookingDTO booking = restTemplate.getForObject(url, BookingDTO.class);
 
                 if (booking == null || booking.getUserId() == null) {
-                    throw new Exception("Callback không tìm thấy booking hoặc userId.");
+                    throw new Exception("Không tìm thấy booking hoặc userId.");
                 }
 
-                TriggerTicketRequest ticketRequest = new TriggerTicketRequest(bookingId, booking.getUserId());
-                restTemplate.postForObject(TICKET_SERVICE_URL, ticketRequest, Map.class);
+                System.out.println("✅ Lấy booking thành công, userId: " + booking.getUserId());
 
+                // BƯỚC 2: Tạo vé
+                System.out.println("📞 Gọi POST: " + TICKET_SERVICE_URL);
+                TriggerTicketRequest ticketRequest = new TriggerTicketRequest(bookingId, booking.getUserId());
+                Map<String, Object> ticketResponse = restTemplate.postForObject(
+                        TICKET_SERVICE_URL,
+                        ticketRequest,
+                        Map.class
+                );
+                System.out.println("✅ Tạo vé thành công: " + ticketResponse);
+
+                // BƯỚC 3: Cập nhật trạng thái booking
                 try {
+                    String updateUrl = BOOKING_SERVICE_URL + bookingId + "/status";
+                    System.out.println("📞 Gọi PUT: " + updateUrl);
+                    System.out.println("   Body: {\"status\": \"SUCCESSFUL\"}");
+
                     restTemplate.put(
-                            BOOKING_SERVICE_URL + bookingId + "/status",
-                            Map.of("status", "SUCCESSFUL"),
-                            Void.class
+                            updateUrl,
+                            Map.of("status", "SUCCESSFUL")
                     );
+
+                    System.out.println("✅ Cập nhật booking status thành công");
+
                 } catch (Exception e) {
-                    System.err.println("CẢNH BÁO: Không thể cập nhật status booking: " + e.getMessage());
+                    System.err.println("❌ Lỗi cập nhật status booking: " + e.getMessage());
+                    e.printStackTrace();
+                    // Không throw exception để vẫn trả về success cho VNPay
                 }
 
                 return ResponseEntity.ok(Map.of("message", "Thanh toán thành công, vé đang được xử lý."));
 
             } catch (Exception e) {
-                System.err.println("ERROR in callback: " + e.getMessage());
+                System.err.println("❌ Lỗi trong callback: " + e.getMessage());
                 e.printStackTrace();
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("message", "Lỗi server sau khi thanh toán: " + e.getMessage()));
+                        .body(Map.of("message", "Lỗi server: " + e.getMessage()));
             }
         } else {
+            // Thanh toán thất bại
+            System.out.println("❌ Thanh toán thất bại với mã: " + vnp_ResponseCode);
+
             try {
+                String updateUrl = BOOKING_SERVICE_URL + bookingId + "/status";
+                System.out.println("📞 Cập nhật booking sang FAILED: " + updateUrl);
+
                 restTemplate.put(
-                        BOOKING_SERVICE_URL + bookingId + "/status",
-                        Map.of("status", "FAILED"),
-                        Void.class
+                        updateUrl,
+                        Map.of("status", "FAILED")
                 );
+
+                System.out.println("✅ Đã cập nhật booking sang FAILED");
+
             } catch (Exception e) {
-                System.err.println("CẢNH BÁO: Không thể cập nhật status booking sang FAILED: " + e.getMessage());
+                System.err.println("❌ Không thể cập nhật status sang FAILED: " + e.getMessage());
             }
 
             return ResponseEntity.badRequest().body(Map.of("message", "Thanh toán thất bại"));

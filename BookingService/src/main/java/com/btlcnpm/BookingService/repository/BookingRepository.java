@@ -27,18 +27,24 @@ public class BookingRepository {
      * Lưu một đối tượng Booking mới vào Firestore
      */
     public Booking save(Booking booking) throws Exception {
-        // Tự động tạo một ID mới cho document
-        String bookingId = getBookingCollection().document().getId();
-        booking.setBookingId(bookingId); // Gán ID này vào đối tượng
+        // Nếu booking chưa có ID -> Tạo mới
+        if (booking.getBookingId() == null || booking.getBookingId().isEmpty()) {
+            String bookingId = getBookingCollection().document().getId();
+            booking.setBookingId(bookingId);
+        }
 
-        // Lưu đối tượng vào document có ID vừa tạo
-        ApiFuture<WriteResult> future = getBookingCollection().document(bookingId).set(booking);
+        // Lưu hoặc cập nhật (Firestore sẽ overwrite nếu document đã tồn tại)
+        ApiFuture<WriteResult> future = getBookingCollection()
+                .document(booking.getBookingId())
+                .set(booking);
 
-        // Chờ cho đến khi lưu xong
         future.get();
+
+        System.out.println("✅ Đã lưu/cập nhật booking: " + booking.getBookingId() + " với status: " + booking.getStatus());
 
         return booking;
     }
+
 
     public Booking getBookingById(String bookingId) throws Exception {
         DocumentReference docRef = getBookingCollection().document(bookingId);
@@ -51,27 +57,30 @@ public class BookingRepository {
     }
 
     public List<Booking> getBookingsByUserIdAndStatus(String userId, String status) throws ExecutionException, InterruptedException {
-        // Bắt đầu câu truy vấn : WHERE userId == [userId]
         Query query = getBookingCollection().whereEqualTo("userId", userId);
 
-        // Nếu người dùng có cung cấp 'status' (PENDING, SUCCESSFUL, FAILED)
-        //    thì thêm điều kiện đó vào câu truy vấn
         if (status != null && !status.isEmpty()) {
             query = query.whereEqualTo("status", status);
         }
 
-        // (Trong một dự án thật, bạn nên thêm .orderBy("createdAt", Query.Direction.DESCENDING)
-        // để sắp xếp mới nhất lên đầu, nhưng nó yêu cầu tạo index trên Firebase)
-
-        // Thực thi truy vấn
         ApiFuture<QuerySnapshot> querySnapshot = query.get();
 
-        //  aChuyển kết quả thành danh sách (List)
         List<Booking> bookings = new ArrayList<>();
         for (QueryDocumentSnapshot document : querySnapshot.get().getDocuments()) {
             bookings.add(document.toObject(Booking.class));
         }
 
         return bookings;
+    }
+
+    public boolean updateStatus(String bookingId, String newStatus) throws Exception {
+        DocumentReference docRef = getBookingCollection().document(bookingId);
+
+        ApiFuture<WriteResult> future = docRef.update("status", newStatus);
+        future.get();
+
+        System.out.println("✅ Đã cập nhật status của booking " + bookingId + " thành " + newStatus);
+
+        return true;
     }
 }

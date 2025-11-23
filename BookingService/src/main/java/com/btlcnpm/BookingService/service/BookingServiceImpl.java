@@ -123,9 +123,6 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // Cập nhật status
-        booking.setStatus(newStatus);
-        bookingRepository.save(booking);
-
-        return true;
+        return bookingRepository.updateStatus(bookingId, newStatus);
     }
 }
