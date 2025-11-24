@@ -4,8 +4,15 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log // <<< THÊM IMPORT NÀY
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -121,7 +128,8 @@ fun AppNavHost(
                         popUpTo(Screen.MovieList.route) { inclusive = true } // Hoặc popUpTo(0) để xóa hết
                         launchSingleTop = true
                     }
-                }
+                },
+                navController = navController
             )
         }
 
@@ -240,6 +248,38 @@ fun AppNavHost(
                 )
             } else {
                 navController.popBackStack() // Quay lại nếu URL lỗi
+            }
+        }
+        composable(
+            route = Screen.TicketQR.route,
+            arguments = listOf(navArgument("ticketId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val ticketId = backStackEntry.arguments?.getString("ticketId")
+
+            // Lấy ticket từ AuthViewModel
+            val ticketState by authViewModel.ticketUiState.collectAsState()
+
+            when (val state = ticketState) {
+                is TicketUiState.Success -> {
+                    val ticket = state.tickets.find { it.ticketId == ticketId }
+                    if (ticket != null) {
+                        TicketQRScreen(
+                            ticket = ticket,
+                            navController = navController
+                        )
+                    } else {
+                        navController.popBackStack()
+                    }
+                }
+
+                else -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
             }
         }
     }

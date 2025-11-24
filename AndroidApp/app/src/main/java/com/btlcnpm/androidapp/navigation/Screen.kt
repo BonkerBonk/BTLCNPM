@@ -45,6 +45,9 @@ sealed class Screen(val route: String) {
             return "vnpay_payment_screen/$encodedUrl/$bookingId"
         }
     }
+    object TicketQR : Screen("ticket_qr_screen/{ticketId}") {
+        fun createRoute(ticketId: String) = "ticket_qr_screen/$ticketId"
+    }
 
 }
     

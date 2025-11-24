@@ -54,9 +54,10 @@ android {
 dependencies {
     implementation("androidx.browser:browser:1.8.0")
     implementation(libs.androidx.core.ktx) // Giữ lại core-ktx
-
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("io.github.g0dkar:qrcode-kotlin:4.1.1")
     // Đã xóa: appcompat, material (view), activity, constraintlayout, compose.ui.unit
-
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     val composeBom = platform("androidx.compose:compose-bom:2024.05.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)

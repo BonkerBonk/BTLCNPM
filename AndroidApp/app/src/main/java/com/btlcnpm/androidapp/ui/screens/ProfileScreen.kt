@@ -2,6 +2,7 @@ package com.btlcnpm.androidapp.ui.screens
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,9 +15,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.btlcnpm.androidapp.data.model.FirestoreTimestamp
 import com.btlcnpm.androidapp.data.model.Ticket
 import com.btlcnpm.androidapp.data.model.UpdateProfileRequest
+import com.btlcnpm.androidapp.navigation.Screen
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -24,7 +27,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ProfileScreen(
     authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory),
-    onLogoutNavigation: () -> Unit // Callback để quay lại màn Login
+    onLogoutNavigation: () -> Unit,
+    navController: NavController // Callback để quay lại màn Login
 ) {
     val profileState by authViewModel.profileUiState.collectAsState()
     val ticketState by authViewModel.ticketUiState.collectAsState() // <<< LẤY STATE CỦA VÉ
@@ -68,7 +72,8 @@ fun ProfileScreen(
             )
             1 -> MyTicketsTab( // Tab 1: Hiển thị vé
                 ticketState = ticketState,
-                onRefresh = { authViewModel.fetchMyTickets() }
+                onRefresh = { authViewModel.fetchMyTickets() },
+                navController = navController
             )
         }
     }
@@ -216,7 +221,8 @@ fun ProfileInfoTab(
 @Composable
 fun MyTicketsTab(
     ticketState: TicketUiState,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    navController: NavController
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         when (ticketState) {
@@ -245,7 +251,9 @@ fun MyTicketsTab(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(ticketState.tickets) { ticket ->
-                            TicketItem(ticket = ticket)
+                            TicketItem(ticket = ticket, onTicketClick = { ticketId ->
+                                navController.navigate(Screen.TicketQR.createRoute(ticketId))
+                            })
                         }
                     }
                 }
@@ -256,7 +264,10 @@ fun MyTicketsTab(
 
 // --- COMPOSABLE MỚI CHO 1 ITEM VÉ ---
 @Composable
-fun TicketItem(ticket: Ticket) {
+fun TicketItem(
+    ticket: Ticket,
+    onTicketClick: (String) -> Unit
+) {
     // Hàm helper để đổi Timestamp sang String (dd/MM/yyyy HH:mm)
     @RequiresApi(Build.VERSION_CODES.O)
     fun formatTicketTime(timestamp: FirestoreTimestamp?): String {
@@ -273,7 +284,7 @@ fun TicketItem(ticket: Ticket) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onTicketClick(ticket.ticketId) },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -294,15 +305,21 @@ fun TicketItem(ticket: Ticket) {
                 text = "Suất: ${formatTicketTime(ticket.showtimeStartTime)}",
                 style = MaterialTheme.typography.bodyMedium
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
 
-            // TODO: Hiển thị QR Code từ ticket.qrCodeData
-            // (Bạn sẽ cần thêm thư viện QR Code sau, ví dụ: "io.github.g0dkar:qrcode-kotlin-compose")
+            // Badge trạng thái
+            val statusColor = when (ticket.status) {
+                "VALID" -> MaterialTheme.colorScheme.primary
+                "USED" -> MaterialTheme.colorScheme.error
+                "EXPIRED" -> MaterialTheme.colorScheme.outline
+                else -> MaterialTheme.colorScheme.onSurface
+            }
+
             Text(
-                "Mã QR (Dữ liệu): ${ticket.qrCodeData}",
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                lineHeight = 14.sp
+                text = ticket.status,
+                color = statusColor,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
             )
         }
     }
